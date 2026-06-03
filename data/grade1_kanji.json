@@ -1,0 +1,734 @@
+{
+  "version": "1.0",
+  "source": "KANJIDIC2 Jim Breen/EDRDG CC BY-SA 4.0",
+  "nodes": [
+    {
+      "id": "g1_000",
+      "kanji": "木",
+      "on": "MOKU",
+      "kun": "き",
+      "meaning": "tree",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_001",
+      "kanji": "林",
+      "on": "RIN",
+      "kun": "は",
+      "meaning": "grove",
+      "strokes": 8,
+      "grade": 1
+    },
+    {
+      "id": "g1_002",
+      "kanji": "森",
+      "on": "SHIN",
+      "kun": "も",
+      "meaning": "forest",
+      "strokes": 12,
+      "grade": 1
+    },
+    {
+      "id": "g1_003",
+      "kanji": "山",
+      "on": "SAN",
+      "kun": "や",
+      "meaning": "mountain",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_004",
+      "kanji": "川",
+      "on": "SEN",
+      "kun": "か",
+      "meaning": "river",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_005",
+      "kanji": "田",
+      "on": "DEN",
+      "kun": "た",
+      "meaning": "rice field",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_006",
+      "kanji": "火",
+      "on": "KA",
+      "kun": "ひ",
+      "meaning": "fire",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_007",
+      "kanji": "水",
+      "on": "SUI",
+      "kun": "み",
+      "meaning": "water",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_008",
+      "kanji": "土",
+      "on": "DO",
+      "kun": "つ",
+      "meaning": "earth",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_009",
+      "kanji": "日",
+      "on": "NICHI",
+      "kun": "ひ",
+      "meaning": "sun",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_010",
+      "kanji": "月",
+      "on": "GETSU",
+      "kun": "つ",
+      "meaning": "moon",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_011",
+      "kanji": "目",
+      "on": "MOKU",
+      "kun": "め",
+      "meaning": "eye",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_012",
+      "kanji": "耳",
+      "on": "JI",
+      "kun": "み",
+      "meaning": "ear",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_013",
+      "kanji": "口",
+      "on": "KOU",
+      "kun": "く",
+      "meaning": "mouth",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_014",
+      "kanji": "手",
+      "on": "SHU",
+      "kun": "て",
+      "meaning": "hand",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_015",
+      "kanji": "足",
+      "on": "SOKU",
+      "kun": "あ",
+      "meaning": "foot",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_016",
+      "kanji": "人",
+      "on": "JIN",
+      "kun": "ひ",
+      "meaning": "person",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_017",
+      "kanji": "子",
+      "on": "SHI",
+      "kun": "こ",
+      "meaning": "child",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_018",
+      "kanji": "女",
+      "on": "JO",
+      "kun": "お",
+      "meaning": "woman",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_019",
+      "kanji": "男",
+      "on": "DAN",
+      "kun": "お",
+      "meaning": "man",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_020",
+      "kanji": "一",
+      "on": "ICHI",
+      "kun": "ひ",
+      "meaning": "one",
+      "strokes": 1,
+      "grade": 1
+    },
+    {
+      "id": "g1_021",
+      "kanji": "二",
+      "on": "NI",
+      "kun": "ふ",
+      "meaning": "two",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_022",
+      "kanji": "三",
+      "on": "SAN",
+      "kun": "み",
+      "meaning": "three",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_023",
+      "kanji": "四",
+      "on": "SHI",
+      "kun": "よ",
+      "meaning": "four",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_024",
+      "kanji": "五",
+      "on": "GO",
+      "kun": "い",
+      "meaning": "five",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_025",
+      "kanji": "六",
+      "on": "ROKU",
+      "kun": "む",
+      "meaning": "six",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_026",
+      "kanji": "七",
+      "on": "SHICHI",
+      "kun": "な",
+      "meaning": "seven",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_027",
+      "kanji": "八",
+      "on": "HACHI",
+      "kun": "や",
+      "meaning": "eight",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_028",
+      "kanji": "九",
+      "on": "KU",
+      "kun": "こ",
+      "meaning": "nine",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_029",
+      "kanji": "十",
+      "on": "JUU",
+      "kun": "と",
+      "meaning": "ten",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_030",
+      "kanji": "百",
+      "on": "HYAKU",
+      "kun": "ひ",
+      "meaning": "hundred",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_031",
+      "kanji": "千",
+      "on": "SEN",
+      "kun": "ち",
+      "meaning": "thousand",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_032",
+      "kanji": "上",
+      "on": "JOU",
+      "kun": "う",
+      "meaning": "above",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_033",
+      "kanji": "下",
+      "on": "KA",
+      "kun": "し",
+      "meaning": "below",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_034",
+      "kanji": "中",
+      "on": "CHUU",
+      "kun": "な",
+      "meaning": "middle",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_035",
+      "kanji": "大",
+      "on": "DAI",
+      "kun": "お",
+      "meaning": "big",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_036",
+      "kanji": "小",
+      "on": "SHOU",
+      "kun": "ち",
+      "meaning": "small",
+      "strokes": 3,
+      "grade": 1
+    },
+    {
+      "id": "g1_037",
+      "kanji": "本",
+      "on": "HON",
+      "kun": "も",
+      "meaning": "book",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_038",
+      "kanji": "右",
+      "on": "UU",
+      "kun": "み",
+      "meaning": "right",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_039",
+      "kanji": "左",
+      "on": "SA",
+      "kun": "ひ",
+      "meaning": "left",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_040",
+      "kanji": "年",
+      "on": "NEN",
+      "kun": "と",
+      "meaning": "year",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_041",
+      "kanji": "学",
+      "on": "GAKU",
+      "kun": "ま",
+      "meaning": "study",
+      "strokes": 8,
+      "grade": 1
+    },
+    {
+      "id": "g1_042",
+      "kanji": "校",
+      "on": "KOU",
+      "kun": "ま",
+      "meaning": "school",
+      "strokes": 10,
+      "grade": 1
+    },
+    {
+      "id": "g1_043",
+      "kanji": "先",
+      "on": "SEN",
+      "kun": "さ",
+      "meaning": "before",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_044",
+      "kanji": "生",
+      "on": "SEI",
+      "kun": "い",
+      "meaning": "life",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_045",
+      "kanji": "文",
+      "on": "MON",
+      "kun": "ふ",
+      "meaning": "sentence",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_046",
+      "kanji": "見",
+      "on": "KEN",
+      "kun": "み",
+      "meaning": "see",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_047",
+      "kanji": "聞",
+      "on": "BUN",
+      "kun": "き",
+      "meaning": "hear",
+      "strokes": 14,
+      "grade": 1
+    },
+    {
+      "id": "g1_048",
+      "kanji": "言",
+      "on": "GEN",
+      "kun": "い",
+      "meaning": "say",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_049",
+      "kanji": "出",
+      "on": "SHUTSU",
+      "kun": "で",
+      "meaning": "exit",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_050",
+      "kanji": "入",
+      "on": "NYUU",
+      "kun": "い",
+      "meaning": "enter",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_051",
+      "kanji": "立",
+      "on": "RITSU",
+      "kun": "た",
+      "meaning": "stand",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_052",
+      "kanji": "休",
+      "on": "KYUU",
+      "kun": "や",
+      "meaning": "rest",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_053",
+      "kanji": "国",
+      "on": "KOKU",
+      "kun": "く",
+      "meaning": "country",
+      "strokes": 8,
+      "grade": 1
+    },
+    {
+      "id": "g1_054",
+      "kanji": "町",
+      "on": "CHOU",
+      "kun": "ま",
+      "meaning": "town",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_055",
+      "kanji": "村",
+      "on": "SON",
+      "kun": "む",
+      "meaning": "village",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_056",
+      "kanji": "白",
+      "on": "HAKU",
+      "kun": "し",
+      "meaning": "white",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_057",
+      "kanji": "赤",
+      "on": "SEKI",
+      "kun": "あ",
+      "meaning": "red",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_058",
+      "kanji": "青",
+      "on": "SEI",
+      "kun": "あ",
+      "meaning": "blue",
+      "strokes": 8,
+      "grade": 1
+    },
+    {
+      "id": "g1_059",
+      "kanji": "金",
+      "on": "KIN",
+      "kun": "か",
+      "meaning": "gold",
+      "strokes": 8,
+      "grade": 1
+    },
+    {
+      "id": "g1_060",
+      "kanji": "雨",
+      "on": "U",
+      "kun": "あ",
+      "meaning": "rain",
+      "strokes": 8,
+      "grade": 1
+    },
+    {
+      "id": "g1_061",
+      "kanji": "天",
+      "on": "TEN",
+      "kun": "あ",
+      "meaning": "heaven",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_062",
+      "kanji": "気",
+      "on": "KI",
+      "kun": "き",
+      "meaning": "spirit",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_063",
+      "kanji": "名",
+      "on": "MEI",
+      "kun": "な",
+      "meaning": "name",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_064",
+      "kanji": "早",
+      "on": "SOU",
+      "kun": "は",
+      "meaning": "early",
+      "strokes": 6,
+      "grade": 1
+    },
+    {
+      "id": "g1_065",
+      "kanji": "正",
+      "on": "SEI",
+      "kun": "た",
+      "meaning": "correct",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_066",
+      "kanji": "玉",
+      "on": "GYOKU",
+      "kun": "た",
+      "meaning": "ball",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_067",
+      "kanji": "王",
+      "on": "OU",
+      "kun": "お",
+      "meaning": "king",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_068",
+      "kanji": "円",
+      "on": "EN",
+      "kun": "ま",
+      "meaning": "yen",
+      "strokes": 4,
+      "grade": 1
+    },
+    {
+      "id": "g1_069",
+      "kanji": "力",
+      "on": "RYOKU",
+      "kun": "ち",
+      "meaning": "power",
+      "strokes": 2,
+      "grade": 1
+    },
+    {
+      "id": "g1_070",
+      "kanji": "石",
+      "on": "SEKI",
+      "kun": "い",
+      "meaning": "stone",
+      "strokes": 5,
+      "grade": 1
+    },
+    {
+      "id": "g1_071",
+      "kanji": "花",
+      "on": "KA",
+      "kun": "は",
+      "meaning": "flower",
+      "strokes": 7,
+      "grade": 1
+    },
+    {
+      "id": "g1_072",
+      "kanji": "草",
+      "on": "SOU",
+      "kun": "く",
+      "meaning": "grass",
+      "strokes": 9,
+      "grade": 1
+    },
+    {
+      "id": "g1_073",
+      "kanji": "虫",
+      "on": "CHUU",
+      "kun": "む",
+      "meaning": "insect",
+      "strokes": 6,
+      "grade": 1
+    }
+  ],
+  "edges": [
+    {
+      "from": "g1_000",
+      "to": "g1_001",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_000",
+      "to": "g1_002",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_000",
+      "to": "g1_037",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_000",
+      "to": "g1_055",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_000",
+      "to": "g1_042",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_009",
+      "to": "g1_064",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_011",
+      "to": "g1_046",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_012",
+      "to": "g1_047",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_016",
+      "to": "g1_052",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_005",
+      "to": "g1_019",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_005",
+      "to": "g1_054",
+      "type": "radical_family"
+    },
+    {
+      "from": "g1_067",
+      "to": "g1_066",
+      "type": "radical_family"
+    }
+  ]
+}

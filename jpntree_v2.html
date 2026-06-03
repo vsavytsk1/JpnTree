@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang='ja'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>JpnTree v2.0 -- Sentence Mode</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;color:#e0e0e0;
+  font-family:ui-monospace,'SF Mono',monospace;
+  font-size:11px;overflow:hidden;height:100vh;
+  display:flex;flex-direction:column}
+
+/* TOP: kanji grid panel */
+#grid-panel{flex:1;overflow:hidden;position:relative;
+  border-bottom:1px solid #1a1f2e}
+#plane{position:absolute;transform-origin:0 0}
+svg.edges{position:absolute;top:0;left:0;pointer-events:none;
+  overflow:visible}
+svg.edges line{stroke:rgba(0,212,255,0.08);stroke-width:1}
+svg.edges line.sentence-edge{stroke:#ffd700;stroke-width:2;
+  stroke-dasharray:none;opacity:0.8}
+
+/* KANJI NODE -- upper kanji, lower reading */
+.knode{position:absolute;width:68px;
+  background:rgba(5,5,20,0.96);
+  border:1px solid rgba(0,212,255,0.1);
+  border-radius:5px;text-align:center;
+  cursor:pointer;
+  transition:border-color 0.25s,box-shadow 0.25s,opacity 0.25s}
+.knode:hover{border-color:rgba(0,212,255,0.5);
+  box-shadow:0 0 12px rgba(0,212,255,0.1)}
+.knode.dim{opacity:0.18}
+.knode.lit{border-color:#ffd700!important;
+  box-shadow:0 0 20px rgba(255,215,0,0.25)!important;
+  opacity:1!important}
+.knode.lit .k-kanji{color:#ffd700!important}
+.knode.related{border-color:rgba(0,255,213,0.4)!important;
+  opacity:0.75!important}
+
+.k-kanji{font-size:28px;line-height:1.1;padding:6px 2px 2px;
+  color:#ddd;font-family:'Hiragino Sans','Yu Gothic',sans-serif}
+.k-reading{font-size:9px;padding:1px 2px 4px;color:#00d4ff;
+  border-top:1px solid rgba(0,212,255,0.08);
+  font-family:'Hiragino Sans','Yu Gothic',sans-serif}
+.k-meaning{font-size:7px;color:#334;padding:0 2px 3px;
+  text-transform:uppercase;letter-spacing:0.06em}
+
+/* BOTTOM: input panel */
+#input-panel{height:110px;background:rgba(3,3,14,0.98);
+  border-top:1px solid #1a1f2e;
+  display:flex;flex-direction:column;padding:8px 14px;gap:6px}
+#input-row{display:flex;gap:8px;align-items:center}
+#sent-input{flex:1;background:#0a0e18;border:1px solid #1a2a3a;
+  border-radius:4px;padding:6px 10px;
+  font-family:'Hiragino Sans','Yu Gothic',ui-monospace,sans-serif;
+  font-size:14px;color:#e0e0e0;outline:none;
+  transition:border-color 0.2s}
+#sent-input:focus{border-color:#00d4ff}
+#sent-input::placeholder{color:#223;font-size:11px}
+.btn{background:#0a0e18;border:1px solid #1a2a3a;color:#556;
+  border-radius:3px;padding:4px 12px;font-family:inherit;
+  font-size:9px;cursor:pointer;text-transform:uppercase;
+  letter-spacing:0.08em;transition:all 0.15s;white-space:nowrap}
+.btn:hover{color:#e0e0e0;border-color:#4a6a8a}
+#match-row{display:flex;gap:6px;flex-wrap:wrap;min-height:20px;
+  align-items:center}
+.match-chip{background:rgba(255,215,0,0.1);
+  border:1px solid rgba(255,215,0,0.3);
+  border-radius:10px;padding:2px 8px;font-size:9px;
+  color:#ffd700;
+  font-family:'Hiragino Sans','Yu Gothic',sans-serif}
+.match-chip .chip-k{font-size:13px;vertical-align:middle}
+#status{font-size:8px;color:#334;letter-spacing:0.1em;
+  text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id='grid-panel'>
+  <div id='plane'>
+    <svg class='edges' id='esvg'></svg>
+  </div>
+</div>
+<div id='input-panel'>
+  <div id='input-row'>
+    <input id='sent-input' type='text'
+      placeholder='type anything... I see a tree / veo un arbol / miru / fire water'>
+    <button class='btn' onclick='parseSentence()'>MATCH</button>
+    <button class='btn' onclick='clearMatch()'>CLEAR</button>
+  </div>
+  <div id='match-row'></div>
+  <div id='status'>type a word or sentence -- kanji light up in the grid</div>
+</div>
+
+<script>
+var NODES = [{"id": "g1_000", "kanji": "木", "on": "MOKU", "kun": "き", "meaning": "tree", "strokes": 4, "grade": 1}, {"id": "g1_001", "kanji": "林", "on": "RIN", "kun": "は", "meaning": "grove", "strokes": 8, "grade": 1}, {"id": "g1_002", "kanji": "森", "on": "SHIN", "kun": "も", "meaning": "forest", "strokes": 12, "grade": 1}, {"id": "g1_003", "kanji": "山", "on": "SAN", "kun": "や", "meaning": "mountain", "strokes": 3, "grade": 1}, {"id": "g1_004", "kanji": "川", "on": "SEN", "kun": "か", "meaning": "river", "strokes": 3, "grade": 1}, {"id": "g1_005", "kanji": "田", "on": "DEN", "kun": "た", "meaning": "rice field", "strokes": 5, "grade": 1}, {"id": "g1_006", "kanji": "火", "on": "KA", "kun": "ひ", "meaning": "fire", "strokes": 4, "grade": 1}, {"id": "g1_007", "kanji": "水", "on": "SUI", "kun": "み", "meaning": "water", "strokes": 4, "grade": 1}, {"id": "g1_008", "kanji": "土", "on": "DO", "kun": "つ", "meaning": "earth", "strokes": 3, "grade": 1}, {"id": "g1_009", "kanji": "日", "on": "NICHI", "kun": "ひ", "meaning": "sun", "strokes": 4, "grade": 1}, {"id": "g1_010", "kanji": "月", "on": "GETSU", "kun": "つ", "meaning": "moon", "strokes": 4, "grade": 1}, {"id": "g1_011", "kanji": "目", "on": "MOKU", "kun": "め", "meaning": "eye", "strokes": 5, "grade": 1}, {"id": "g1_012", "kanji": "耳", "on": "JI", "kun": "み", "meaning": "ear", "strokes": 6, "grade": 1}, {"id": "g1_013", "kanji": "口", "on": "KOU", "kun": "く", "meaning": "mouth", "strokes": 3, "grade": 1}, {"id": "g1_014", "kanji": "手", "on": "SHU", "kun": "て", "meaning": "hand", "strokes": 4, "grade": 1}, {"id": "g1_015", "kanji": "足", "on": "SOKU", "kun": "あ", "meaning": "foot", "strokes": 7, "grade": 1}, {"id": "g1_016", "kanji": "人", "on": "JIN", "kun": "ひ", "meaning": "person", "strokes": 2, "grade": 1}, {"id": "g1_017", "kanji": "子", "on": "SHI", "kun": "こ", "meaning": "child", "strokes": 3, "grade": 1}, {"id": "g1_018", "kanji": "女", "on": "JO", "kun": "お", "meaning": "woman", "strokes": 3, "grade": 1}, {"id": "g1_019", "kanji": "男", "on": "DAN", "kun": "お", "meaning": "man", "strokes": 7, "grade": 1}, {"id": "g1_020", "kanji": "一", "on": "ICHI", "kun": "ひ", "meaning": "one", "strokes": 1, "grade": 1}, {"id": "g1_021", "kanji": "二", "on": "NI", "kun": "ふ", "meaning": "two", "strokes": 2, "grade": 1}, {"id": "g1_022", "kanji": "三", "on": "SAN", "kun": "み", "meaning": "three", "strokes": 3, "grade": 1}, {"id": "g1_023", "kanji": "四", "on": "SHI", "kun": "よ", "meaning": "four", "strokes": 5, "grade": 1}, {"id": "g1_024", "kanji": "五", "on": "GO", "kun": "い", "meaning": "five", "strokes": 4, "grade": 1}, {"id": "g1_025", "kanji": "六", "on": "ROKU", "kun": "む", "meaning": "six", "strokes": 4, "grade": 1}, {"id": "g1_026", "kanji": "七", "on": "SHICHI", "kun": "な", "meaning": "seven", "strokes": 2, "grade": 1}, {"id": "g1_027", "kanji": "八", "on": "HACHI", "kun": "や", "meaning": "eight", "strokes": 2, "grade": 1}, {"id": "g1_028", "kanji": "九", "on": "KU", "kun": "こ", "meaning": "nine", "strokes": 2, "grade": 1}, {"id": "g1_029", "kanji": "十", "on": "JUU", "kun": "と", "meaning": "ten", "strokes": 2, "grade": 1}, {"id": "g1_030", "kanji": "百", "on": "HYAKU", "kun": "ひ", "meaning": "hundred", "strokes": 6, "grade": 1}, {"id": "g1_031", "kanji": "千", "on": "SEN", "kun": "ち", "meaning": "thousand", "strokes": 3, "grade": 1}, {"id": "g1_032", "kanji": "上", "on": "JOU", "kun": "う", "meaning": "above", "strokes": 3, "grade": 1}, {"id": "g1_033", "kanji": "下", "on": "KA", "kun": "し", "meaning": "below", "strokes": 3, "grade": 1}, {"id": "g1_034", "kanji": "中", "on": "CHUU", "kun": "な", "meaning": "middle", "strokes": 4, "grade": 1}, {"id": "g1_035", "kanji": "大", "on": "DAI", "kun": "お", "meaning": "big", "strokes": 3, "grade": 1}, {"id": "g1_036", "kanji": "小", "on": "SHOU", "kun": "ち", "meaning": "small", "strokes": 3, "grade": 1}, {"id": "g1_037", "kanji": "本", "on": "HON", "kun": "も", "meaning": "book", "strokes": 5, "grade": 1}, {"id": "g1_038", "kanji": "右", "on": "UU", "kun": "み", "meaning": "right", "strokes": 5, "grade": 1}, {"id": "g1_039", "kanji": "左", "on": "SA", "kun": "ひ", "meaning": "left", "strokes": 5, "grade": 1}, {"id": "g1_040", "kanji": "年", "on": "NEN", "kun": "と", "meaning": "year", "strokes": 6, "grade": 1}, {"id": "g1_041", "kanji": "学", "on": "GAKU", "kun": "ま", "meaning": "study", "strokes": 8, "grade": 1}, {"id": "g1_042", "kanji": "校", "on": "KOU", "kun": "ま", "meaning": "school", "strokes": 10, "grade": 1}, {"id": "g1_043", "kanji": "先", "on": "SEN", "kun": "さ", "meaning": "before", "strokes": 6, "grade": 1}, {"id": "g1_044", "kanji": "生", "on": "SEI", "kun": "い", "meaning": "life", "strokes": 5, "grade": 1}, {"id": "g1_045", "kanji": "文", "on": "MON", "kun": "ふ", "meaning": "sentence", "strokes": 4, "grade": 1}, {"id": "g1_046", "kanji": "見", "on": "KEN", "kun": "み", "meaning": "see", "strokes": 7, "grade": 1}, {"id": "g1_047", "kanji": "聞", "on": "BUN", "kun": "き", "meaning": "hear", "strokes": 14, "grade": 1}, {"id": "g1_048", "kanji": "言", "on": "GEN", "kun": "い", "meaning": "say", "strokes": 7, "grade": 1}, {"id": "g1_049", "kanji": "出", "on": "SHUTSU", "kun": "で", "meaning": "exit", "strokes": 5, "grade": 1}, {"id": "g1_050", "kanji": "入", "on": "NYUU", "kun": "い", "meaning": "enter", "strokes": 2, "grade": 1}, {"id": "g1_051", "kanji": "立", "on": "RITSU", "kun": "た", "meaning": "stand", "strokes": 5, "grade": 1}, {"id": "g1_052", "kanji": "休", "on": "KYUU", "kun": "や", "meaning": "rest", "strokes": 6, "grade": 1}, {"id": "g1_053", "kanji": "国", "on": "KOKU", "kun": "く", "meaning": "country", "strokes": 8, "grade": 1}, {"id": "g1_054", "kanji": "町", "on": "CHOU", "kun": "ま", "meaning": "town", "strokes": 7, "grade": 1}, {"id": "g1_055", "kanji": "村", "on": "SON", "kun": "む", "meaning": "village", "strokes": 7, "grade": 1}, {"id": "g1_056", "kanji": "白", "on": "HAKU", "kun": "し", "meaning": "white", "strokes": 5, "grade": 1}, {"id": "g1_057", "kanji": "赤", "on": "SEKI", "kun": "あ", "meaning": "red", "strokes": 7, "grade": 1}, {"id": "g1_058", "kanji": "青", "on": "SEI", "kun": "あ", "meaning": "blue", "strokes": 8, "grade": 1}, {"id": "g1_059", "kanji": "金", "on": "KIN", "kun": "か", "meaning": "gold", "strokes": 8, "grade": 1}, {"id": "g1_060", "kanji": "雨", "on": "U", "kun": "あ", "meaning": "rain", "strokes": 8, "grade": 1}, {"id": "g1_061", "kanji": "天", "on": "TEN", "kun": "あ", "meaning": "heaven", "strokes": 4, "grade": 1}, {"id": "g1_062", "kanji": "気", "on": "KI", "kun": "き", "meaning": "spirit", "strokes": 6, "grade": 1}, {"id": "g1_063", "kanji": "名", "on": "MEI", "kun": "な", "meaning": "name", "strokes": 6, "grade": 1}, {"id": "g1_064", "kanji": "早", "on": "SOU", "kun": "は", "meaning": "early", "strokes": 6, "grade": 1}, {"id": "g1_065", "kanji": "正", "on": "SEI", "kun": "た", "meaning": "correct", "strokes": 5, "grade": 1}, {"id": "g1_066", "kanji": "玉", "on": "GYOKU", "kun": "た", "meaning": "ball", "strokes": 5, "grade": 1}, {"id": "g1_067", "kanji": "王", "on": "OU", "kun": "お", "meaning": "king", "strokes": 4, "grade": 1}, {"id": "g1_068", "kanji": "円", "on": "EN", "kun": "ま", "meaning": "yen", "strokes": 4, "grade": 1}, {"id": "g1_069", "kanji": "力", "on": "RYOKU", "kun": "ち", "meaning": "power", "strokes": 2, "grade": 1}, {"id": "g1_070", "kanji": "石", "on": "SEKI", "kun": "い", "meaning": "stone", "strokes": 5, "grade": 1}, {"id": "g1_071", "kanji": "花", "on": "KA", "kun": "は", "meaning": "flower", "strokes": 7, "grade": 1}, {"id": "g1_072", "kanji": "草", "on": "SOU", "kun": "く", "meaning": "grass", "strokes": 9, "grade": 1}, {"id": "g1_073", "kanji": "虫", "on": "CHUU", "kun": "む", "meaning": "insect", "strokes": 6, "grade": 1}];
+var EDGES = [{"from": "g1_000", "to": "g1_001", "type": "radical_family"}, {"from": "g1_000", "to": "g1_002", "type": "radical_family"}, {"from": "g1_000", "to": "g1_037", "type": "radical_family"}, {"from": "g1_000", "to": "g1_055", "type": "radical_family"}, {"from": "g1_000", "to": "g1_042", "type": "radical_family"}, {"from": "g1_009", "to": "g1_064", "type": "radical_family"}, {"from": "g1_011", "to": "g1_046", "type": "radical_family"}, {"from": "g1_012", "to": "g1_047", "type": "radical_family"}, {"from": "g1_016", "to": "g1_052", "type": "radical_family"}, {"from": "g1_005", "to": "g1_019", "type": "radical_family"}, {"from": "g1_005", "to": "g1_054", "type": "radical_family"}, {"from": "g1_067", "to": "g1_066", "type": "radical_family"}];
+var ES    = {"tree": "arbol", "grove": "bosque pequeno", "forest": "bosque", "mountain": "montana", "river": "rio", "rice field": "campo", "fire": "fuego", "water": "agua", "earth": "tierra", "sun": "sol", "moon": "luna", "eye": "ojo", "ear": "oreja", "mouth": "boca", "hand": "mano", "foot": "pie", "person": "persona", "child": "nino", "woman": "mujer", "man": "hombre", "one": "uno", "two": "dos", "three": "tres", "four": "cuatro", "five": "cinco", "six": "seis", "seven": "siete", "eight": "ocho", "nine": "nueve", "ten": "diez", "hundred": "cien", "thousand": "mil", "above": "arriba", "below": "abajo", "middle": "medio", "big": "grande", "small": "pequeno", "book": "libro", "right": "derecha", "left": "izquierda", "year": "ano", "study": "estudiar", "school": "escuela", "before": "antes", "life": "vida", "sentence": "frase", "see": "ver", "hear": "escuchar", "say": "decir", "exit": "salir", "enter": "entrar", "stand": "estar de pie", "rest": "descansar", "country": "pais", "town": "pueblo", "village": "aldea", "white": "blanco", "red": "rojo", "blue": "azul", "gold": "oro", "rain": "lluvia", "heaven": "cielo", "spirit": "espiritu", "name": "nombre", "early": "temprano", "correct": "correcto", "ball": "pelota", "king": "rey", "yen": "yen", "power": "fuerza", "stone": "piedra", "flower": "flor", "grass": "hierba", "insect": "insecto"};
+
+var plane = document.getElementById('plane');
+var esvg  = document.getElementById('esvg');
+var POS   = {};
+
+// layout: compact grid
+function layout() {
+  var cols = 10;
+  var sx = 82, sy = 88, ox = 12, oy = 12;
+  NODES.forEach(function(nd, i) {
+    POS[nd.id] = {x: ox + (i%cols)*sx, y: oy + Math.floor(i/cols)*sy};
+  });
+}
+
+function buildNodes() {
+  NODES.forEach(function(nd) {
+    var div = document.createElement('div');
+    div.className = 'knode';
+    div.id = 'nd-' + nd.id;
+    div.style.left = POS[nd.id].x + 'px';
+    div.style.top  = POS[nd.id].y + 'px';
+    div.innerHTML =
+      '<div class="k-kanji">'  + nd.kanji   + '</div>' +
+      '<div class="k-reading">'+ nd.kun     + '</div>' +
+      '<div class="k-meaning">'+ nd.meaning + '</div>';
+    div.addEventListener('click', function(){ onNodeClick(nd); });
+    plane.appendChild(div);
+  });
+  // base radical edges (dim)
+  EDGES.forEach(function(e) {
+    var p1=POS[e.from], p2=POS[e.to];
+    if(!p1||!p2) return;
+    var ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.id = 'el-'+e.from+'-'+e.to;
+    ln.setAttribute('x1', p1.x+34); ln.setAttribute('y1', p1.y+66);
+    ln.setAttribute('x2', p2.x+34); ln.setAttribute('y2', p2.y);
+    esvg.appendChild(ln);
+  });
+  setSvgSize();
+}
+
+function setSvgSize() {
+  var mx=0,my=0;
+  Object.values(POS).forEach(function(p){
+    if(p.x+90>mx)mx=p.x+90;
+    if(p.y+100>my)my=p.y+100;
+  });
+  esvg.setAttribute('width',mx); esvg.setAttribute('height',my);
+}
+
+function onNodeClick(nd) {
+  document.getElementById('sent-input').value = nd.meaning;
+  parseSentence();
+}
+
+// SENTENCE MATCHING
+function parseSentence() {
+  var raw = document.getElementById('sent-input').value.toLowerCase().trim();
+  if(!raw) { clearMatch(); return; }
+
+  var matched = [];
+
+  NODES.forEach(function(nd) {
+    var score = 0;
+    var m = nd.meaning.toLowerCase();
+    var k = nd.kanji;
+    var kun = nd.kun.toLowerCase();
+    var on  = nd.on.toLowerCase();
+    var es  = (ES[nd.meaning]||'').toLowerCase();
+
+    // direct kanji in input
+    if(raw.indexOf(k) >= 0) score += 10;
+    // meaning match
+    if(raw.indexOf(m) >= 0) score += 8;
+    // spanish match
+    if(es && raw.indexOf(es) >= 0) score += 8;
+    // reading match
+    if(raw.indexOf(kun) >= 0 && kun.length > 1) score += 6;
+    if(raw.indexOf(on) >= 0 && on.length > 1) score += 5;
+    // word fragments
+    var words = raw.split(/[\s,\.!?]+/);
+    words.forEach(function(w) {
+      if(w.length > 2) {
+        if(m.indexOf(w)>=0 || w.indexOf(m)>=0) score += 3;
+        if(es.indexOf(w)>=0 || w.indexOf(es)>=0) score += 3;
+      }
+    });
+
+    if(score > 0) matched.push({nd:nd, score:score});
+  });
+
+  matched.sort(function(a,b){return b.score-a.score;});
+  var top = matched.slice(0,8);
+  var topIds = top.map(function(x){return x.nd.id;});
+
+  // dim all, light matched
+  NODES.forEach(function(nd) {
+    var div = document.getElementById('nd-'+nd.id);
+    div.classList.remove('lit','related','dim');
+    if(topIds.indexOf(nd.id) >= 0) {
+      div.classList.add('lit');
+    } else {
+      div.classList.add('dim');
+    }
+  });
+
+  // also light radical relatives of matched
+  EDGES.forEach(function(e) {
+    var fromLit = topIds.indexOf(e.from)>=0;
+    var toLit   = topIds.indexOf(e.to)>=0;
+    if(fromLit || toLit) {
+      var otherId = fromLit ? e.to : e.from;
+      if(topIds.indexOf(otherId)<0) {
+        var div = document.getElementById('nd-'+otherId);
+        div.classList.remove('dim');
+        div.classList.add('related');
+      }
+    }
+  });
+
+  // draw sentence edges between matched nodes
+  document.querySelectorAll('.sentence-edge').forEach(function(el){el.remove();});
+  for(var i=0; i<top.length-1; i++) {
+    for(var j=i+1; j<top.length; j++) {
+      var p1=POS[top[i].nd.id], p2=POS[top[j].nd.id];
+      if(!p1||!p2) continue;
+      // only connect if score both >= 5
+      if(top[i].score>=5 && top[j].score>=5) {
+        var ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+        ln.classList.add('sentence-edge');
+        ln.setAttribute('x1',p1.x+34); ln.setAttribute('y1',p1.y+34);
+        ln.setAttribute('x2',p2.x+34); ln.setAttribute('y2',p2.y+34);
+        esvg.appendChild(ln);
+      }
+    }
+  }
+
+  // chips
+  var mr = document.getElementById('match-row');
+  mr.innerHTML = '';
+  top.forEach(function(x) {
+    var chip = document.createElement('span');
+    chip.className = 'match-chip';
+    chip.innerHTML = '<span class="chip-k">'+x.nd.kanji+'</span> '+x.nd.meaning;
+    mr.appendChild(chip);
+  });
+
+  var st = document.getElementById('status');
+  if(top.length === 0) {
+    st.textContent = 'no match found -- try english, spanish, or japanese';
+    clearLights();
+  } else {
+    st.textContent = top.length + ' kanji found in: ' + raw;
+  }
+}
+
+function clearLights() {
+  NODES.forEach(function(nd){
+    var div=document.getElementById('nd-'+nd.id);
+    div.classList.remove('lit','related','dim');
+  });
+}
+
+function clearMatch() {
+  document.getElementById('sent-input').value = '';
+  document.getElementById('match-row').innerHTML = '';
+  document.getElementById('status').textContent = 'type a word or sentence';
+  clearLights();
+  document.querySelectorAll('.sentence-edge').forEach(function(el){el.remove();});
+}
+
+// enter key
+document.getElementById('sent-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter') parseSentence();
+});
+
+// pan+zoom
+var panX=10, panY=10, zm=1, drag=false, lm={x:0,y:0};
+function upT(){
+  plane.style.zoom=zm;
+  plane.style.left=panX+'px';
+  plane.style.top=panY+'px';
+}
+document.getElementById('grid-panel').addEventListener('pointerdown',function(e){
+  if(e.target.closest('.knode')) return;
+  drag=true; lm={x:e.clientX,y:e.clientY};
+});
+document.addEventListener('pointermove',function(e){
+  if(!drag) return;
+  panX+=(e.clientX-lm.x)/zm; panY+=(e.clientY-lm.y)/zm;
+  lm={x:e.clientX,y:e.clientY}; upT();
+});
+document.addEventListener('pointerup',function(){drag=false;});
+document.getElementById('grid-panel').addEventListener('wheel',function(e){
+  e.preventDefault();
+  var oz=zm; zm*=e.deltaY>0?0.88:1.12;
+  zm=Math.max(0.3,Math.min(2.5,zm));
+  panX=e.clientX/zm-(e.clientX/oz-panX);
+  panY=e.clientY/zm-(e.clientY/oz-panY);
+  upT();
+},{passive:false});
+
+// INIT
+layout(); buildNodes(); upT();
+console.log('%c[JpnTree v2.0] sentence mode. type anything.','color:#ffd700');
+</script>
+</body>
+</html>

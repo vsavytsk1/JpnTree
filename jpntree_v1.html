@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JpnTree v1.0 -- Grade 1 Kanji</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;color:#e0e0e0;
+  font-family:ui-monospace,"SF Mono",monospace;
+  font-size:11px;overflow:hidden;height:100vh;width:100vw}
+#plane{position:absolute;transform-origin:0 0}
+#hud{position:fixed;top:10px;left:12px;z-index:20;
+  font-size:9px;pointer-events:none}
+#hud .lbl{color:#555}
+#hud .val{color:#00d4ff;font-weight:bold}
+#ver{position:fixed;top:10px;right:12px;font-size:9px;
+  opacity:0.25;z-index:20}
+#hint{position:fixed;bottom:36px;left:50%;
+  transform:translateX(-50%);font-size:9px;
+  color:#1a2a3a;letter-spacing:0.1em;text-transform:uppercase}
+
+/* THE NODE -- upper kanji, lower reading */
+.knode{position:absolute;
+  background:rgba(5,5,20,0.96);
+  border:1px solid rgba(0,212,255,0.15);
+  border-radius:6px;
+  width:72px;
+  text-align:center;
+  cursor:pointer;
+  transition:border-color 0.2s,box-shadow 0.2s,transform 0.15s;
+  user-select:none}
+.knode:hover{border-color:rgba(0,212,255,0.6);
+  box-shadow:0 0 16px rgba(0,212,255,0.12);
+  transform:scale(1.08)}
+.knode.active{border-color:#00ffd5;
+  box-shadow:0 0 24px rgba(0,255,213,0.2)}
+.knode.ghost{opacity:0.35;border-style:dashed;cursor:pointer}
+.knode.ghost:hover{opacity:0.7}
+
+/* UPPER: the kanji character */
+.k-kanji{font-size:32px;line-height:1.1;
+  padding:8px 4px 2px;
+  color:#ffffff;
+  font-family:"Hiragino Sans","Yu Gothic",sans-serif}
+/* LOWER: the reading */
+.k-reading{font-size:10px;
+  padding:2px 4px 6px;
+  color:#00d4ff;
+  letter-spacing:0.05em;
+  font-family:"Hiragino Sans","Yu Gothic",sans-serif;
+  border-top:1px solid rgba(0,212,255,0.1)}
+/* meaning tooltip on hover */
+.k-meaning{font-size:8px;color:#555;
+  padding:0 4px 4px;
+  text-transform:uppercase;letter-spacing:0.08em}
+
+/* EDGE SVG */
+svg.edges{position:absolute;top:0;left:0;pointer-events:none}
+svg.edges line{stroke:rgba(0,212,255,0.15);stroke-width:1;
+  stroke-dasharray:4,4}
+svg.edges line.active-edge{stroke:rgba(0,255,213,0.5);
+  stroke-dasharray:none;stroke-width:1.5}
+
+/* bottom bar */
+#bar{position:fixed;bottom:0;left:0;right:0;z-index:10;
+  background:rgba(5,5,16,0.95);border-top:1px solid #1a1f2e;
+  padding:6px 14px;display:flex;gap:8px;align-items:center}
+.btn{background:#0a0e18;border:1px solid #1a2a3a;
+  color:#556;border-radius:3px;padding:3px 10px;
+  font-family:inherit;font-size:9px;cursor:pointer;
+  text-transform:uppercase;letter-spacing:0.08em;
+  transition:all 0.15s}
+.btn:hover{color:#e0e0e0;border-color:#4a6a8a}
+.sep{width:1px;height:16px;background:#1a2a3a}
+.lbl-bar{font-size:8px;color:#333;
+  text-transform:uppercase;letter-spacing:0.1em}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div><span class="lbl">nodes </span><span class="val" id="h-n">0</span></div>
+  <div><span class="lbl">shown </span><span class="val" id="h-s">0</span></div>
+  <div><span class="lbl">grade </span><span class="val">1</span></div>
+</div>
+<div id="ver">JpnTree v1.0</div>
+<div id="hint">click a kanji to reveal its family</div>
+<div id="plane">
+  <svg class="edges" id="esvg"></svg>
+</div>
+<div id="bar">
+  <span class="lbl-bar">view</span>
+  <button class="btn" onclick="showAll()">ALL</button>
+  <button class="btn" onclick="showFamily('tree')">木 FAMILY</button>
+  <button class="btn" onclick="resetView()">RESET</button>
+  <div class="sep"></div>
+  <span class="lbl-bar">P=12 chi=2 always</span>
+</div>
+<script>
+// JpnTree v1.0
+// Upper node: kanji | Lower node: reading
+// Same engine as MachineNet Math Tree
+// P=12. chi=2. The monkey loves trees. Always.
+
+var NODES = [{"id": "g1_000", "kanji": "木", "on": "MOKU", "kun": "き", "meaning": "tree", "strokes": 4, "grade": 1}, {"id": "g1_001", "kanji": "林", "on": "RIN", "kun": "は", "meaning": "grove", "strokes": 8, "grade": 1}, {"id": "g1_002", "kanji": "森", "on": "SHIN", "kun": "も", "meaning": "forest", "strokes": 12, "grade": 1}, {"id": "g1_003", "kanji": "山", "on": "SAN", "kun": "や", "meaning": "mountain", "strokes": 3, "grade": 1}, {"id": "g1_004", "kanji": "川", "on": "SEN", "kun": "か", "meaning": "river", "strokes": 3, "grade": 1}, {"id": "g1_005", "kanji": "田", "on": "DEN", "kun": "た", "meaning": "rice field", "strokes": 5, "grade": 1}, {"id": "g1_006", "kanji": "火", "on": "KA", "kun": "ひ", "meaning": "fire", "strokes": 4, "grade": 1}, {"id": "g1_007", "kanji": "水", "on": "SUI", "kun": "み", "meaning": "water", "strokes": 4, "grade": 1}, {"id": "g1_008", "kanji": "土", "on": "DO", "kun": "つ", "meaning": "earth", "strokes": 3, "grade": 1}, {"id": "g1_009", "kanji": "日", "on": "NICHI", "kun": "ひ", "meaning": "sun", "strokes": 4, "grade": 1}, {"id": "g1_010", "kanji": "月", "on": "GETSU", "kun": "つ", "meaning": "moon", "strokes": 4, "grade": 1}, {"id": "g1_011", "kanji": "目", "on": "MOKU", "kun": "め", "meaning": "eye", "strokes": 5, "grade": 1}, {"id": "g1_012", "kanji": "耳", "on": "JI", "kun": "み", "meaning": "ear", "strokes": 6, "grade": 1}, {"id": "g1_013", "kanji": "口", "on": "KOU", "kun": "く", "meaning": "mouth", "strokes": 3, "grade": 1}, {"id": "g1_014", "kanji": "手", "on": "SHU", "kun": "て", "meaning": "hand", "strokes": 4, "grade": 1}, {"id": "g1_015", "kanji": "足", "on": "SOKU", "kun": "あ", "meaning": "foot", "strokes": 7, "grade": 1}, {"id": "g1_016", "kanji": "人", "on": "JIN", "kun": "ひ", "meaning": "person", "strokes": 2, "grade": 1}, {"id": "g1_017", "kanji": "子", "on": "SHI", "kun": "こ", "meaning": "child", "strokes": 3, "grade": 1}, {"id": "g1_018", "kanji": "女", "on": "JO", "kun": "お", "meaning": "woman", "strokes": 3, "grade": 1}, {"id": "g1_019", "kanji": "男", "on": "DAN", "kun": "お", "meaning": "man", "strokes": 7, "grade": 1}, {"id": "g1_020", "kanji": "一", "on": "ICHI", "kun": "ひ", "meaning": "one", "strokes": 1, "grade": 1}, {"id": "g1_021", "kanji": "二", "on": "NI", "kun": "ふ", "meaning": "two", "strokes": 2, "grade": 1}, {"id": "g1_022", "kanji": "三", "on": "SAN", "kun": "み", "meaning": "three", "strokes": 3, "grade": 1}, {"id": "g1_023", "kanji": "四", "on": "SHI", "kun": "よ", "meaning": "four", "strokes": 5, "grade": 1}, {"id": "g1_024", "kanji": "五", "on": "GO", "kun": "い", "meaning": "five", "strokes": 4, "grade": 1}, {"id": "g1_025", "kanji": "六", "on": "ROKU", "kun": "む", "meaning": "six", "strokes": 4, "grade": 1}, {"id": "g1_026", "kanji": "七", "on": "SHICHI", "kun": "な", "meaning": "seven", "strokes": 2, "grade": 1}, {"id": "g1_027", "kanji": "八", "on": "HACHI", "kun": "や", "meaning": "eight", "strokes": 2, "grade": 1}, {"id": "g1_028", "kanji": "九", "on": "KU", "kun": "こ", "meaning": "nine", "strokes": 2, "grade": 1}, {"id": "g1_029", "kanji": "十", "on": "JUU", "kun": "と", "meaning": "ten", "strokes": 2, "grade": 1}, {"id": "g1_030", "kanji": "百", "on": "HYAKU", "kun": "ひ", "meaning": "hundred", "strokes": 6, "grade": 1}, {"id": "g1_031", "kanji": "千", "on": "SEN", "kun": "ち", "meaning": "thousand", "strokes": 3, "grade": 1}, {"id": "g1_032", "kanji": "上", "on": "JOU", "kun": "う", "meaning": "above", "strokes": 3, "grade": 1}, {"id": "g1_033", "kanji": "下", "on": "KA", "kun": "し", "meaning": "below", "strokes": 3, "grade": 1}, {"id": "g1_034", "kanji": "中", "on": "CHUU", "kun": "な", "meaning": "middle", "strokes": 4, "grade": 1}, {"id": "g1_035", "kanji": "大", "on": "DAI", "kun": "お", "meaning": "big", "strokes": 3, "grade": 1}, {"id": "g1_036", "kanji": "小", "on": "SHOU", "kun": "ち", "meaning": "small", "strokes": 3, "grade": 1}, {"id": "g1_037", "kanji": "本", "on": "HON", "kun": "も", "meaning": "book", "strokes": 5, "grade": 1}, {"id": "g1_038", "kanji": "右", "on": "UU", "kun": "み", "meaning": "right", "strokes": 5, "grade": 1}, {"id": "g1_039", "kanji": "左", "on": "SA", "kun": "ひ", "meaning": "left", "strokes": 5, "grade": 1}, {"id": "g1_040", "kanji": "年", "on": "NEN", "kun": "と", "meaning": "year", "strokes": 6, "grade": 1}, {"id": "g1_041", "kanji": "学", "on": "GAKU", "kun": "ま", "meaning": "study", "strokes": 8, "grade": 1}, {"id": "g1_042", "kanji": "校", "on": "KOU", "kun": "ま", "meaning": "school", "strokes": 10, "grade": 1}, {"id": "g1_043", "kanji": "先", "on": "SEN", "kun": "さ", "meaning": "before", "strokes": 6, "grade": 1}, {"id": "g1_044", "kanji": "生", "on": "SEI", "kun": "い", "meaning": "life", "strokes": 5, "grade": 1}, {"id": "g1_045", "kanji": "文", "on": "MON", "kun": "ふ", "meaning": "sentence", "strokes": 4, "grade": 1}, {"id": "g1_046", "kanji": "見", "on": "KEN", "kun": "み", "meaning": "see", "strokes": 7, "grade": 1}, {"id": "g1_047", "kanji": "聞", "on": "BUN", "kun": "き", "meaning": "hear", "strokes": 14, "grade": 1}, {"id": "g1_048", "kanji": "言", "on": "GEN", "kun": "い", "meaning": "say", "strokes": 7, "grade": 1}, {"id": "g1_049", "kanji": "出", "on": "SHUTSU", "kun": "で", "meaning": "exit", "strokes": 5, "grade": 1}, {"id": "g1_050", "kanji": "入", "on": "NYUU", "kun": "い", "meaning": "enter", "strokes": 2, "grade": 1}, {"id": "g1_051", "kanji": "立", "on": "RITSU", "kun": "た", "meaning": "stand", "strokes": 5, "grade": 1}, {"id": "g1_052", "kanji": "休", "on": "KYUU", "kun": "や", "meaning": "rest", "strokes": 6, "grade": 1}, {"id": "g1_053", "kanji": "国", "on": "KOKU", "kun": "く", "meaning": "country", "strokes": 8, "grade": 1}, {"id": "g1_054", "kanji": "町", "on": "CHOU", "kun": "ま", "meaning": "town", "strokes": 7, "grade": 1}, {"id": "g1_055", "kanji": "村", "on": "SON", "kun": "む", "meaning": "village", "strokes": 7, "grade": 1}, {"id": "g1_056", "kanji": "白", "on": "HAKU", "kun": "し", "meaning": "white", "strokes": 5, "grade": 1}, {"id": "g1_057", "kanji": "赤", "on": "SEKI", "kun": "あ", "meaning": "red", "strokes": 7, "grade": 1}, {"id": "g1_058", "kanji": "青", "on": "SEI", "kun": "あ", "meaning": "blue", "strokes": 8, "grade": 1}, {"id": "g1_059", "kanji": "金", "on": "KIN", "kun": "か", "meaning": "gold", "strokes": 8, "grade": 1}, {"id": "g1_060", "kanji": "雨", "on": "U", "kun": "あ", "meaning": "rain", "strokes": 8, "grade": 1}, {"id": "g1_061", "kanji": "天", "on": "TEN", "kun": "あ", "meaning": "heaven", "strokes": 4, "grade": 1}, {"id": "g1_062", "kanji": "気", "on": "KI", "kun": "き", "meaning": "spirit", "strokes": 6, "grade": 1}, {"id": "g1_063", "kanji": "名", "on": "MEI", "kun": "な", "meaning": "name", "strokes": 6, "grade": 1}, {"id": "g1_064", "kanji": "早", "on": "SOU", "kun": "は", "meaning": "early", "strokes": 6, "grade": 1}, {"id": "g1_065", "kanji": "正", "on": "SEI", "kun": "た", "meaning": "correct", "strokes": 5, "grade": 1}, {"id": "g1_066", "kanji": "玉", "on": "GYOKU", "kun": "た", "meaning": "ball", "strokes": 5, "grade": 1}, {"id": "g1_067", "kanji": "王", "on": "OU", "kun": "お", "meaning": "king", "strokes": 4, "grade": 1}, {"id": "g1_068", "kanji": "円", "on": "EN", "kun": "ま", "meaning": "yen", "strokes": 4, "grade": 1}, {"id": "g1_069", "kanji": "力", "on": "RYOKU", "kun": "ち", "meaning": "power", "strokes": 2, "grade": 1}, {"id": "g1_070", "kanji": "石", "on": "SEKI", "kun": "い", "meaning": "stone", "strokes": 5, "grade": 1}, {"id": "g1_071", "kanji": "花", "on": "KA", "kun": "は", "meaning": "flower", "strokes": 7, "grade": 1}, {"id": "g1_072", "kanji": "草", "on": "SOU", "kun": "く", "meaning": "grass", "strokes": 9, "grade": 1}, {"id": "g1_073", "kanji": "虫", "on": "CHUU", "kun": "む", "meaning": "insect", "strokes": 6, "grade": 1}];
+var EDGES = [{"from": "g1_000", "to": "g1_001", "type": "radical_family"}, {"from": "g1_000", "to": "g1_002", "type": "radical_family"}, {"from": "g1_000", "to": "g1_037", "type": "radical_family"}, {"from": "g1_000", "to": "g1_055", "type": "radical_family"}, {"from": "g1_000", "to": "g1_042", "type": "radical_family"}, {"from": "g1_009", "to": "g1_064", "type": "radical_family"}, {"from": "g1_011", "to": "g1_046", "type": "radical_family"}, {"from": "g1_012", "to": "g1_047", "type": "radical_family"}, {"from": "g1_016", "to": "g1_052", "type": "radical_family"}, {"from": "g1_005", "to": "g1_019", "type": "radical_family"}, {"from": "g1_005", "to": "g1_054", "type": "radical_family"}, {"from": "g1_067", "to": "g1_066", "type": "radical_family"}];
+
+var plane = document.getElementById('plane');
+var esvg  = document.getElementById('esvg');
+
+// layout: radial from center, grouped by meaning clusters
+var W = window.innerWidth, H = window.innerHeight;
+var CX = W * 1.2, CY = H * 1.0;
+
+// position map - arrange in a nice grid with families close
+var POS = {};
+var SHOWN = {};
+var ACTIVE = {};
+
+function layoutAll() {
+  var n = NODES.length;
+  var cols = Math.ceil(Math.sqrt(n * 1.4));
+  var sx = 110, sy = 110;
+  var ox = 80, oy = 60;
+
+  // Put families together
+  var order = [];
+  var placed = {};
+
+  // wood family first
+  var families = ['tree','grove','forest','book','village','school'];
+  families.forEach(function(m) {
+    var nd = NODES.find(function(n){return n.meaning===m;});
+    if(nd && !placed[nd.id]){order.push(nd);placed[nd.id]=true;}
+  });
+  // rice family
+  ['sun','rice field','man','town','early'].forEach(function(m){
+    var nd = NODES.find(function(n){return n.meaning===m;});
+    if(nd && !placed[nd.id]){order.push(nd);placed[nd.id]=true;}
+  });
+  // body
+  ['eye','see','ear','hear','mouth','hand','foot'].forEach(function(m){
+    var nd = NODES.find(function(n){return n.meaning===m;});
+    if(nd && !placed[nd.id]){order.push(nd);placed[nd.id]=true;}
+  });
+  // rest
+  NODES.forEach(function(nd){
+    if(!placed[nd.id]){order.push(nd);placed[nd.id]=true;}
+  });
+
+  order.forEach(function(nd, i) {
+    var col = i % cols;
+    var row = Math.floor(i / cols);
+    POS[nd.id] = {x: ox + col*sx, y: oy + row*sy};
+  });
+}
+
+function createNode(nd) {
+  var div = document.createElement('div');
+  div.className = 'knode ghost';
+  div.id = 'nd-' + nd.id;
+  div.style.left = POS[nd.id].x + 'px';
+  div.style.top  = POS[nd.id].y + 'px';
+
+  div.innerHTML =
+    '<div class="k-kanji">' + nd.kanji + '</div>' +
+    '<div class="k-reading">' + nd.kun + '</div>' +
+    '<div class="k-meaning">' + nd.meaning + '</div>';
+
+  div.addEventListener('click', function() { onClickNode(nd); });
+  plane.appendChild(div);
+}
+
+function showNode(id, isActive) {
+  var div = document.getElementById('nd-' + id);
+  if(!div) return;
+  SHOWN[id] = true;
+  div.classList.remove('ghost');
+  if(isActive) {
+    div.classList.add('active');
+    ACTIVE[id] = true;
+  }
+  updateHud();
+}
+
+function onClickNode(nd) {
+  // activate this node
+  showNode(nd.id, true);
+  // reveal its children
+  EDGES.forEach(function(e) {
+    if(e.from === nd.id) {
+      showNode(e.to, false);
+      drawEdge(e.from, e.to);
+    }
+    if(e.to === nd.id && !SHOWN[e.from]) {
+      // also reveal parent if not shown
+    }
+  });
+  // update hint
+  document.getElementById('hint').textContent =
+    nd.kanji + ' (' + nd.meaning + ')  ' + nd.on + ' / ' + nd.kun;
+  updateHud();
+}
+
+function drawEdge(fromId, toId) {
+  var p1 = POS[fromId], p2 = POS[toId];
+  if(!p1 || !p2) return;
+  var eid = 'e-' + fromId + '-' + toId;
+  if(document.getElementById(eid)) return;
+  var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.id = eid;
+  line.setAttribute('x1', p1.x + 36);
+  line.setAttribute('y1', p1.y + 56);
+  line.setAttribute('x2', p2.x + 36);
+  line.setAttribute('y2', p2.y);
+  line.classList.add('active-edge');
+  esvg.appendChild(line);
+}
+
+function showAll() {
+  NODES.forEach(function(nd){ showNode(nd.id, false); });
+  EDGES.forEach(function(e){ drawEdge(e.from, e.to); });
+}
+
+function showFamily(meaning) {
+  resetView();
+  var root = NODES.find(function(n){return n.meaning===meaning;});
+  if(!root) return;
+  showNode(root.id, true);
+  EDGES.forEach(function(e){
+    if(e.from===root.id){ showNode(e.to,false); drawEdge(e.from,e.to); }
+  });
+}
+
+function resetView() {
+  SHOWN = {}; ACTIVE = {};
+  document.querySelectorAll('.knode').forEach(function(d){
+    d.classList.add('ghost');
+    d.classList.remove('active');
+  });
+  while(esvg.firstChild) esvg.removeChild(esvg.firstChild);
+  document.getElementById('hint').textContent = 'click a kanji to reveal its family';
+  // show roots (no incoming edges)
+  var hasParent = {};
+  EDGES.forEach(function(e){ hasParent[e.to]=true; });
+  NODES.forEach(function(nd){
+    if(!hasParent[nd.id]) showNode(nd.id, false);
+  });
+  updateHud();
+}
+
+function updateHud() {
+  document.getElementById('h-n').textContent = NODES.length;
+  document.getElementById('h-s').textContent = Object.keys(SHOWN).length;
+}
+
+function resizeSvg() {
+  var maxX=0, maxY=0;
+  Object.values(POS).forEach(function(p){
+    if(p.x+120>maxX) maxX=p.x+120;
+    if(p.y+120>maxY) maxY=p.y+120;
+  });
+  esvg.setAttribute('width', maxX);
+  esvg.setAttribute('height', maxY);
+  esvg.style.width = maxX + 'px';
+  esvg.style.height = maxY + 'px';
+}
+
+// pan + zoom
+var panX=0, panY=40, zm=0.9, drag=false, lm={x:0,y:0};
+function upT(){
+  plane.style.zoom=zm;
+  plane.style.left=panX+'px';
+  plane.style.top=panY+'px';
+}
+document.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.knode')||e.target.closest('#bar')) return;
+  drag=true; lm={x:e.clientX,y:e.clientY};
+});
+document.addEventListener('pointermove',function(e){
+  if(!drag) return;
+  panX+=(e.clientX-lm.x)/zm; panY+=(e.clientY-lm.y)/zm;
+  lm={x:e.clientX,y:e.clientY}; upT();
+});
+document.addEventListener('pointerup',function(){drag=false;});
+document.addEventListener('wheel',function(e){
+  e.preventDefault();
+  var oz=zm; zm*=e.deltaY>0?0.92:1.08;
+  zm=Math.max(0.2,Math.min(3,zm));
+  panX=e.clientX/zm-(e.clientX/oz-panX);
+  panY=e.clientY/zm-(e.clientY/oz-panY);
+  upT();
+},{passive:false});
+
+// INIT
+layoutAll();
+NODES.forEach(function(nd){ createNode(nd); });
+resizeSvg();
+resetView();
+upT();
+
+console.log('%c[JpnTree v1.0] ' + NODES.length + ' kanji. The monkey loves trees. Always.','color:#00d4ff;font-size:12px');
+</script>
+</body>
+</html>

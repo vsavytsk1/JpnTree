@@ -98,6 +98,7 @@ svg.edges line.sentence-edge{stroke:#ffd700;stroke-width:2;
     <button class='btn' id='btn-next' onclick='stepDir(+1)'>NEXT &#9654;</button>
     <span id='step-lbl' style='font-size:8px;color:#334;letter-spacing:0.1em'></span>
     <button class='btn' onclick='clearMatch()'>CLEAR</button>
+    <button class='btn' id='btn-lc' onclick='cycleLineColor()' style='color:#a78bfa;border-color:#3a1a4a'>LINE COLOR</button>
   </div>
   <div id='match-row'></div>
   <div id='status'>type a word or sentence -- kanji light up in the grid</div>
@@ -311,6 +312,30 @@ document.getElementById('grid-panel').addEventListener('wheel',function(e){
 
 // INIT
 layout(); buildNodes(); upT();
+// === LINE COLOR CYCLE ===
+var LINE_COLORS = [
+  '#ffd700',   // gold (default)
+  '#00ffd5',   // cyan (MNet)
+  '#ff69b4',   // pink (atelier)
+  '#7fff7f',   // green (converging)
+  '#a78bfa',   // purple (baudin)
+  '#ff9040',   // orange (navier)
+];
+var _lineColorIdx = 0;
+
+function cycleLineColor() {
+  _lineColorIdx = (_lineColorIdx + 1) % LINE_COLORS.length;
+  var col = LINE_COLORS[_lineColorIdx];
+  // update CSS for sentence-edge
+  var style = document.getElementById('lc-style');
+  if(!style){ style=document.createElement('style'); style.id='lc-style'; document.head.appendChild(style); }
+  style.textContent = 'svg.edges line.sentence-edge{stroke:'+col+'!important;} .step-label{border-color:'+col+'33!important;color:'+col+'!important;}';
+  var btn = document.getElementById('btn-lc');
+  if(btn) btn.style.color = col;
+  // redraw current step with new color
+  if(_allMatches.length > 0) renderStep();
+}
+
 // === STEPPER ===
 var _allMatches = [];   // full sorted match list
 var _step = 0;          // current step index (0 = show top 12)
@@ -370,7 +395,7 @@ function renderStep() {
         lbl.className = 'step-label';
         lbl.style.left = mx + 'px';
         lbl.style.top  = my + 'px';
-        lbl.textContent = slice[i].nd.kanji + '+' + slice[j].nd.kanji;
+        lbl.textContent = (start+i+1)+chr(46)+ slice[i].nd.kanji + '+' + slice[j].nd.kanji;
         plane.appendChild(lbl);
       }
     }

@@ -57,8 +57,9 @@ svg.edges line.sentence-edge{stroke:#ffd700;stroke-width:2;
 /* BOTTOM: input panel */
 #input-panel{height:110px;background:rgba(3,3,14,0.98);
   border-top:1px solid #1a1f2e;
-  display:flex;flex-direction:column;padding:8px 14px;gap:6px}
-#input-row{display:flex;gap:8px;align-items:center}
+  display:flex;flex-direction:column;padding:8px 14px;gap:6px;
+  overflow:hidden;box-sizing:border-box}
+#input-row{display:flex;gap:8px;align-items:center;flex:0 0 auto}
 #sent-input{flex:1;background:#0a0e18;border:1px solid #1a2a3a;
   border-radius:4px;padding:6px 10px;
   font-family:'Hiragino Sans','Yu Gothic',ui-monospace,sans-serif;
@@ -71,8 +72,12 @@ svg.edges line.sentence-edge{stroke:#ffd700;stroke-width:2;
   font-size:9px;cursor:pointer;text-transform:uppercase;
   letter-spacing:0.08em;transition:all 0.15s;white-space:nowrap}
 .btn:hover{color:#e0e0e0;border-color:#4a6a8a}
-#match-row{display:flex;gap:6px;flex-wrap:wrap;min-height:20px;
-  align-items:center}
+#match-row{display:flex;gap:6px;flex-wrap:nowrap;min-height:20px;
+  align-items:center;flex:1 1 auto;overflow-x:auto;overflow-y:hidden;
+  white-space:nowrap;scrollbar-width:thin}
+#match-row::-webkit-scrollbar{height:4px}
+#match-row::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.3);border-radius:2px}
+.match-chip{flex:0 0 auto}
 .match-chip{background:rgba(255,215,0,0.1);
   border:1px solid rgba(255,215,0,0.3);
   border-radius:10px;padding:2px 8px;font-size:9px;

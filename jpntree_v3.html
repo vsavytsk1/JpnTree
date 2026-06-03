@@ -96,6 +96,7 @@ svg.edges line.sentence-edge{stroke:#ffd700;stroke-width:2;
     <button class='btn' onclick='parseSentence()'>MATCH</button>
     <button class='btn' id='btn-prev' onclick='stepDir(-1)'>&#9664; PREV</button>
     <button class='btn' id='btn-next' onclick='stepDir(+1)'>NEXT &#9654;</button>
+    <button class='btn' id='btn-final' onclick='stepFinal()'>FINAL &#9889;</button>
     <span id='step-lbl' style='font-size:8px;color:#334;letter-spacing:0.1em'></span>
     <button class='btn' onclick='clearMatch()'>CLEAR</button>
     <button class='btn' id='btn-lc' onclick='cycleLineColor()' style='color:#a78bfa;border-color:#3a1a4a'>LINE COLOR</button>
@@ -336,21 +337,58 @@ function cycleLineColor() {
   if(_allMatches.length > 0) renderStep();
 }
 
-// === STEPPER ===
-var _allMatches = [];   // full sorted match list
-var _step = 0;          // current step index (0 = show top 12)
-var _stepSize = 12;
+// === STEPPER (word-by-word cumulative reveal) ===
+// _words = the input split left->right. _step = how many words are active (1..N).
+// at each step we score nodes using ONLY words[0.._step-1], so the graph GROWS
+// in meaning as you add one word at a time. FINAL jumps to all words active.
+var _words = [];        // tokens of the current sentence, left->right
+var _step = 1;          // how many leading words are currently active
+var _allMatches = [];   // matches for the CURRENT step (subset of words)
+
+// score nodes against a given list of words (the active prefix)
+function scoreWords(words) {
+  var raw = words.join(' ').toLowerCase().trim();
+  var matched = [];
+  NODES.forEach(function(nd){
+    var score=0;
+    var m=nd.meaning.toLowerCase(), k=nd.kanji;
+    var kun=nd.kun.toLowerCase(), on=nd.on.toLowerCase();
+    var es=(ES[nd.meaning]||'').toLowerCase();
+    if(raw.indexOf(k)>=0) score+=10;
+    if(raw.indexOf(m)>=0) score+=8;
+    if(es&&raw.indexOf(es)>=0) score+=8;
+    if(raw.indexOf(kun)>=0&&kun.length>1) score+=6;
+    if(raw.indexOf(on)>=0&&on.length>1) score+=5;
+    words.forEach(function(w){
+      w=w.toLowerCase();
+      if(w.length>2){
+        if(m.indexOf(w)>=0||w.indexOf(m)>=0) score+=3;
+        if(es.indexOf(w)>=0||w.indexOf(es)>=0) score+=3;
+      }
+    });
+    if(score>0) matched.push({nd:nd,score:score});
+  });
+  matched.sort(function(a,b){return b.score-a.score;});
+  return matched;
+}
 
 function stepDir(dir) {
-  if(_allMatches.length === 0) return;
-  var maxStep = Math.max(0, Math.floor((_allMatches.length-1)/_stepSize));
-  _step = Math.max(0, Math.min(maxStep, _step + dir));
+  if(_words.length === 0) return;
+  _step = Math.max(1, Math.min(_words.length, _step + dir));
+  _allMatches = scoreWords(_words.slice(0, _step));
+  renderStep();
+}
+
+// jump straight to the complete graph (all words active)
+function stepFinal() {
+  if(_words.length === 0) return;
+  _step = _words.length;
+  _allMatches = scoreWords(_words.slice(0, _step));
   renderStep();
 }
 
 function renderStep() {
-  var start = _step * _stepSize;
-  var slice = _allMatches.slice(start, start + _stepSize);
+  var slice = _allMatches;   // all matches for the current active word-prefix
   var sliceIds = slice.map(function(x){return x.nd.id;});
 
   // update lights
@@ -395,7 +433,7 @@ function renderStep() {
         lbl.className = 'step-label';
         lbl.style.left = mx + 'px';
         lbl.style.top  = my + 'px';
-        lbl.textContent = (start+i+1)+'.'+ slice[i].nd.kanji + '+' + slice[j].nd.kanji;
+        lbl.textContent = (i+1)+'.'+ slice[i].nd.kanji + '+' + slice[j].nd.kanji;
         plane.appendChild(lbl);
       }
     }
@@ -411,60 +449,45 @@ function renderStep() {
     mr.appendChild(chip);
   });
 
-  // step label
-  var total=_allMatches.length;
-  var maxStep=Math.max(0,Math.floor((total-1)/_stepSize));
+  // step label: which words are active + how many kanji that meaning lit up
+  var nW=_words.length;
+  var active=_words.slice(0,_step).join(' ');
   var sl=document.getElementById('step-lbl');
-  if(sl) sl.textContent = total>0 ? 'step '+(_step+1)+'/'+(maxStep+1)+' ('+total+' total)' : '';
+  if(sl) sl.textContent = nW>0
+    ? 'word '+_step+'/'+nW+' -- "'+active+'" ('+_allMatches.length+' kanji)'
+    : '';
 
-  // btn state
+  // btn state: PREV dim at first word, NEXT/FINAL dim at last word
   var bp=document.getElementById('btn-prev');
   var bn=document.getElementById('btn-next');
-  if(bp) bp.style.opacity=_step>0?'1':'0.3';
-  if(bn) bn.style.opacity=_step<maxStep?'1':'0.3';
+  var bf=document.getElementById('btn-final');
+  if(bp) bp.style.opacity=_step>1?'1':'0.3';
+  if(bn) bn.style.opacity=_step<nW?'1':'0.3';
+  if(bf) bf.style.opacity=_step<nW?'1':'0.3';
 }
 
-// override parseSentence to store all matches
+// override parseSentence: split into words, start with just the FIRST word active.
+// PREV/NEXT then add/remove one word at a time so the graph grows in meaning.
 var _origParse = parseSentence;
 parseSentence = function() {
-  var raw = document.getElementById('sent-input').value.toLowerCase().trim();
+  var raw = document.getElementById('sent-input').value.trim();
   if(!raw){clearMatch();return;}
-  var matched=[];
-  NODES.forEach(function(nd){
-    var score=0;
-    var m=nd.meaning.toLowerCase(), k=nd.kanji;
-    var kun=nd.kun.toLowerCase(), on=nd.on.toLowerCase();
-    var es=(ES[nd.meaning]||'').toLowerCase();
-    if(raw.indexOf(k)>=0) score+=10;
-    if(raw.indexOf(m)>=0) score+=8;
-    if(es&&raw.indexOf(es)>=0) score+=8;
-    if(raw.indexOf(kun)>=0&&kun.length>1) score+=6;
-    if(raw.indexOf(on)>=0&&on.length>1) score+=5;
-    var words=raw.split(/[\s,\.!?]+/);
-    words.forEach(function(w){
-      if(w.length>2){
-        if(m.indexOf(w)>=0||w.indexOf(m)>=0) score+=3;
-        if(es.indexOf(w)>=0||w.indexOf(es)>=0) score+=3;
-      }
-    });
-    if(score>0) matched.push({nd:nd,score:score});
-  });
-  matched.sort(function(a,b){return b.score-a.score;});
-  _allMatches = matched;
-  _step = 0;
+  _words = raw.split(/[\s,\.!?]+/).filter(function(w){return w.length>0;});
+  _step = 1;   // begin with the first word only
+  _allMatches = scoreWords(_words.slice(0, _step));
   renderStep();
   var st=document.getElementById('status');
-  if(matched.length===0){
+  if(_words.length===0){
     st.textContent='no match -- try english, spanish, or japanese';
   } else {
-    st.textContent=matched.length+' kanji found in: '+raw;
+    st.textContent=_words.length+' word(s) -- step with PREV/NEXT, jump with FINAL';
   }
 };
 
 var _origClear = clearMatch;
 clearMatch = function(){
   _origClear();
-  _allMatches=[];_step=0;
+  _words=[];_allMatches=[];_step=1;
   var sl=document.getElementById('step-lbl');
   if(sl) sl.textContent='';
   document.querySelectorAll('.step-label').forEach(function(el){el.remove();});

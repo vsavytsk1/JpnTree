@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Age of Lenguages · The War Council v1.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+  AGE OF LENGUAGES · v1.2 — THE WAR COUNCIL
+  ==========================================================================
+  Atelier conventions folded in (apollonium / atelier / bersha):
+    · live COST METER   — you field only what you pay for (the price is paid)
+    · VERDICT           — bersha-style honest outcome; balanced = the attractor
+    · earnable BADGE    — grey → gold only when EARNED (Path III, target≠result)
+    · DOSSIER           — apollonium tabbed receipts (Army / Cost / Counters / Roadmap)
+  Honest frame: the two-army FIGHT is v1.3. Nothing here fakes a prize.
+  Motion is opt-in (Path VIII); prefers-reduced-motion honoured. Zero deps
+  beyond fonts. The center is held, not shown (Path II): ἀγάπη.
+  Frozen step — v1.3 copies this, never overwrites it (Path X).
+-->
+<style>
+  :root{
+    --bg:#120e08; --bg2:#0b0805; --stone:#241b10; --stone2:#2f2415;
+    --edge:#4a3820; --edge-lit:#6e5530; --bevel:#7a5f33;
+    --tan:#cbb994; --tan-dim:#8a7c5f;
+    --gold:#e8b84a; --gold-hi:#ffd76a;
+    --cyan:#6fc3e0;                 /* Atelier: measured value / cost / count */
+    --pink:#e07ab0;                 /* op / result */
+    --green:#8fbf6b;                /* good / available */
+    --alarm:#e2534b;               /* overload — bersha sink */
+    --lock-bg:#221d16; --lock-tx:#5c5343; --lock-bd:#332b1f;
+    --a1:#8f8261; --a2:#c88a34; --a3:#b0563a; --a4:#caa23a;
+    --food:#e2534b; --wood:#8fbf6b; --goldres:#e8b84a; --stone-res:#9fb3c4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:radial-gradient(120% 90% at 50% -10%, #1c1509 0%, var(--bg) 55%, var(--bg2) 100%);
+    color:var(--tan);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;overflow:hidden}
+  .app{height:100vh;display:flex;flex-direction:column}
+
+  /* ── TOP: live budget meter + age track ── */
+  .topbar{flex:0 0 auto;display:flex;align-items:stretch;background:linear-gradient(#2a2013,#1b140b);
+    border-bottom:2px solid var(--edge);box-shadow:0 2px 0 #0a0704,inset 0 1px 0 #3d2f1a}
+  .res{display:flex;align-items:center;gap:15px;padding:7px 16px;flex-wrap:wrap}
+  .rmeter{display:flex;flex-direction:column;gap:3px;min-width:96px}
+  .rmeter .rtop{display:flex;align-items:center;gap:6px}
+  .rmeter .dot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 6px currentColor,inset 0 0 3px rgba(0,0,0,.5)}
+  .rmeter .rlab{font-size:8px;letter-spacing:.11em;text-transform:uppercase;color:var(--tan-dim)}
+  .rmeter .rspent{font-size:11px;font-weight:600;color:var(--cyan);margin-left:auto}
+  .rmeter .rspent .rbud{color:var(--tan-dim);font-weight:400}
+  .rmeter .rspent.over{color:var(--alarm)}
+  .rbar{height:4px;border-radius:3px;background:#1b140b;overflow:hidden;border:1px solid #0d0a06}
+  .rbar>span{display:block;height:100%;transition:width .2s}
+  .spring{flex:1}
+  .agetrack{display:flex;align-items:stretch}
+  .agebtn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:102px;padding:6px 10px;cursor:pointer;background:transparent;color:var(--tan-dim);
+    border-left:1px solid #0d0a06;transition:all .18s}
+  .agebtn .ag-n{font-family:'Cinzel',serif;font-weight:700;font-size:11px;letter-spacing:.03em}
+  .agebtn .ag-c{font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;margin-top:2px;opacity:.85}
+  .agebtn:hover{background:#00000030;color:var(--tan)}
+  .agebtn.on{color:#120e08}
+  .agebtn.on.age-0{background:linear-gradient(var(--a1),#6f6349)}
+  .agebtn.on.age-1{background:linear-gradient(var(--a2),#9c6a26)}
+  .agebtn.on.age-2{background:linear-gradient(var(--a3),#8a4230)}
+  .agebtn.on.age-3{background:linear-gradient(var(--a4),#9c7d29)}
+
+  /* ── CIV RAIL ── */
+  .civrail{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px;
+    background:linear-gradient(#1a140c,#140f08);border-bottom:1px solid var(--edge);overflow-x:auto}
+  .civ-lead{font-family:'Cinzel',serif;font-weight:700;font-size:11px;color:var(--gold);letter-spacing:.05em;white-space:nowrap}
+  .shield{position:relative;flex:0 0 auto;width:116px;display:flex;align-items:center;gap:8px;
+    padding:5px 9px 5px 7px;cursor:pointer;background:linear-gradient(#241b10,#191207);
+    border:1px solid var(--edge);border-radius:4px 4px 8px 8px;transition:all .18s;filter:grayscale(.5) brightness(.82)}
+  .shield:hover{filter:none;border-color:var(--bevel);transform:translateY(-1px)}
+  .shield.on{filter:none;border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 4px 14px rgba(232,184,74,.22)}
+  .shield .flag{font-size:20px;line-height:1;filter:drop-shadow(0 1px 1px #000)}
+  .shield .cv{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .shield .cv-n{font-family:'Cinzel',serif;font-weight:600;font-size:10.5px;color:var(--tan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shield .cv-e{font-size:6.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--tan-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shield .civdot{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;border:1.5px solid #140f08}
+  .rail-sp{flex:1}
+  .dossier-toggle{flex:0 0 auto;background:#0c0c16;color:var(--cyan);border:1px solid var(--edge);
+    border-radius:4px;padding:6px 12px;font-family:inherit;font-size:9px;letter-spacing:.08em;
+    text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .15s}
+  .dossier-toggle:hover{border-color:var(--cyan);color:var(--gold-hi)}
+  .dossier-toggle.on{background:var(--cyan);color:#0b0805;border-color:var(--cyan)}
+
+  /* ── STAGE + TREE (from v1.1) ── */
+  .body-wrap{flex:1 1 auto;display:flex;min-height:0;position:relative}
+  .stage{flex:1 1 auto;position:relative;overflow:auto;min-height:0}
+  .plane{position:relative;transform-origin:0 0}
+  svg.wires{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+  svg.wires line{stroke:var(--edge-lit);stroke-width:2}
+  svg.wires line.locked{stroke:#2b2318;stroke-dasharray:3 5;stroke-width:1.5}
+  svg.wires line.head{stroke:var(--edge);stroke-width:1.5;stroke-dasharray:1 4}
+  .band{position:absolute;left:0;pointer-events:none}
+  .band .band-fill{position:absolute;inset:0}
+  .band.b0 .band-fill{background:linear-gradient(90deg,#8f826112,transparent 62%)}
+  .band.b1 .band-fill{background:linear-gradient(90deg,#c88a3414,transparent 62%)}
+  .band.b2 .band-fill{background:linear-gradient(90deg,#b0563a16,transparent 62%)}
+  .band.b3 .band-fill{background:linear-gradient(90deg,#caa23a12,transparent 62%)}
+  .band .band-rule{position:absolute;left:0;right:0;top:0;border-top:1px dashed #3a2d1a66}
+  .band .band-lab{position:absolute;left:12px;top:9px;display:flex;flex-direction:column;gap:2px}
+  .band .bl-age{font-family:'Cinzel',serif;font-weight:700;font-size:13px;letter-spacing:.05em}
+  .band.b0 .bl-age{color:var(--a1)} .band.b1 .bl-age{color:var(--a2)}
+  .band.b2 .bl-age{color:var(--a3)} .band.b3 .bl-age{color:var(--a4)}
+  .band .bl-cefr{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#6a5d43}
+  .bhead{position:absolute;top:14px;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;text-align:center}
+  .bhead .ico{font-size:18px;line-height:1;filter:drop-shadow(0 1px 1px #000)}
+  .bhead .bh-n{font-family:'Cinzel',serif;font-weight:700;font-size:11px;color:var(--gold);letter-spacing:.03em}
+  .bhead .bh-b{font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--tan-dim)}
+
+  .unit{position:absolute;cursor:pointer;background:linear-gradient(#2c2114,#1d1509);border:1px solid var(--edge);
+    border-radius:5px;padding:6px 7px 7px;transition:transform .12s,border-color .15s,box-shadow .15s;
+    box-shadow:inset 0 1px 0 #3d2f1a,0 2px 5px #00000055}
+  .unit:hover{transform:translateY(-2px);border-color:var(--bevel);box-shadow:inset 0 1px 0 #3d2f1a,0 5px 14px #00000088}
+  .unit .u-top{display:flex;align-items:center;gap:6px}
+  .unit .u-ico{font-size:14px;line-height:1;filter:drop-shadow(0 1px 1px #000)}
+  .unit .u-name{font-family:'Cinzel',serif;font-weight:600;font-size:11px;color:var(--tan);line-height:1.12}
+  .unit .u-gloss{font-size:8.5px;color:var(--tan-dim);line-height:1.28;margin-top:4px}
+  .unit .u-tier{position:absolute;top:5px;right:7px;font-size:7px;color:#6a5d43;letter-spacing:.08em}
+  .unit .u-cost{margin-top:5px;display:flex;gap:6px;font-size:7.5px;color:var(--cyan);opacity:.85}
+  .unit .u-cost span{display:inline-flex;align-items:center;gap:2px}
+  .unit .u-cost i{width:5px;height:5px;border-radius:50%;font-style:normal}
+  .unit.unique{border-color:var(--gold);background:linear-gradient(#33280f,#241a08);box-shadow:inset 0 1px 0 #5a4620,0 0 14px rgba(232,184,74,.18)}
+  .unit.unique .u-name{color:var(--gold-hi)}
+  .unit.unique .u-tier{display:none}
+  .unit.unique .u-star{position:absolute;top:4px;right:6px;font-size:9px;color:var(--gold)}
+  .unit.locked{background:var(--lock-bg);border-color:var(--lock-bd);opacity:.5;box-shadow:none;border-style:dashed;cursor:not-allowed}
+  .unit.locked .u-name,.unit.locked .u-gloss,.unit.locked .u-ico,.unit.locked .u-cost{color:var(--lock-tx)}
+  .unit.locked:hover{transform:none;border-color:var(--lock-bd)}
+  .unit.locked .u-x{position:absolute;bottom:5px;right:7px;font-size:9px;color:#5c5343}
+  .unit .u-count{position:absolute;top:-8px;left:-8px;min-width:18px;height:18px;padding:0 4px;
+    display:none;align-items:center;justify-content:center;background:var(--cyan);color:#0b0805;
+    border:2px solid #120e08;border-radius:9px;font-size:9px;font-weight:600;box-shadow:0 0 8px rgba(111,195,224,.5)}
+  .unit.drafted{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),inset 0 1px 0 #3d2f1a}
+  .unit.drafted .u-count{display:flex}
+
+  .center-mark{position:absolute;pointer-events:none;text-align:center;transform:translate(-50%,-50%);opacity:.14}
+  .center-mark .cm-g{font-family:'Cinzel',serif;font-weight:400;font-size:26px;color:var(--gold);letter-spacing:.04em}
+  .center-mark .cm-l{font-size:7px;letter-spacing:.22em;text-transform:uppercase;color:var(--tan-dim);margin-top:2px}
+
+  /* ── DOSSIER (apollonium tabbed) ── */
+  .dossier{position:absolute;top:8px;right:8px;z-index:12;width:290px;max-height:calc(100% - 16px);
+    background:rgba(11,9,7,0.96);border:1px solid var(--edge);border-radius:8px;display:none;
+    flex-direction:column;overflow:hidden;box-shadow:0 8px 34px rgba(0,0,0,.55)}
+  .dossier.open{display:flex}
+  .dossier .tabs{display:flex;border-bottom:1px solid var(--edge);flex:0 0 auto}
+  .dossier .tab{flex:1;text-align:center;padding:7px 2px;cursor:pointer;color:var(--tan-dim);
+    text-transform:uppercase;letter-spacing:.04em;font-size:8.5px;border-right:1px solid var(--edge);transition:all .15s}
+  .dossier .tab:last-child{border-right:none}
+  .dossier .tab.on{background:var(--gold);color:#120e08;font-weight:600}
+  .dossier .tab:hover{color:var(--gold-hi)}
+  .dossier .dbody{padding:11px 13px;overflow-y:auto;line-height:1.5;color:#b6a888;font-size:10px}
+  .dossier h5{font-family:'Cinzel',serif;color:var(--gold);font-size:10px;margin:10px 0 4px;letter-spacing:.04em;text-transform:uppercase}
+  .dossier h5:first-child{margin-top:0}
+  .dossier .li{padding:2px 0;border-bottom:1px solid #1c1810}
+  .dossier .k{color:var(--cyan);font-weight:600}
+  .dossier .g{color:var(--gold);font-weight:600}
+  .dossier .s{color:var(--tan-dim);font-size:8.5px;line-height:1.45}
+  .dossier .bad{color:var(--alarm)}
+  .cbar{height:8px;background:#1b140b;border-radius:2px;overflow:hidden;margin:2px 0 5px;border:1px solid #0d0a06}
+  .cbar>div{height:100%;transition:width .2s}
+  .crow{display:flex;justify-content:space-between;font-size:9px}
+  .droadmap .rm{display:flex;gap:7px;padding:3px 0;font-size:9.5px}
+  .droadmap .rm .mk{color:var(--green)} .droadmap .rm.next .mk{color:var(--gold)} .droadmap .rm.todo .mk{color:var(--tan-dim)}
+
+  /* ── ARMY TRAY (bottom) ── */
+  .tray{flex:0 0 auto;background:linear-gradient(#1c150c,#140f08);border-top:2px solid var(--edge);
+    box-shadow:0 -2px 0 #0a0704,inset 0 1px 0 #3d2f1a;padding:9px 16px;display:flex;gap:16px;align-items:stretch;min-height:96px}
+  .tray-left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .tray-hd{display:flex;align-items:center;gap:10px}
+  .tray-hd .th-t{font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:var(--gold)}
+  .tray-hd .th-s{font-size:9px;color:var(--tan-dim)}
+  .tray-hd .th-clear{margin-left:auto;background:#140c10;border:1px solid var(--edge);color:var(--tan-dim);
+    border-radius:4px;padding:3px 9px;font-family:inherit;font-size:8.5px;text-transform:uppercase;letter-spacing:.07em;cursor:pointer}
+  .tray-hd .th-clear:hover{border-color:var(--alarm);color:var(--alarm)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-content:flex-start;min-height:34px;max-height:52px;overflow-y:auto}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(#2c2114,#1d1509);
+    border:1px solid var(--edge-lit);border-radius:6px;padding:4px 6px 4px 8px;cursor:pointer;transition:all .12s}
+  .chip:hover{border-color:var(--alarm)}
+  .chip .ci{font-size:12px}
+  .chip .cn{font-family:'Cinzel',serif;font-size:10px;color:var(--tan)}
+  .chip .cx{font-size:9px;color:var(--cyan);font-weight:600}
+  .chip .cm{color:var(--tan-dim);font-size:9px;margin-left:2px}
+  .chip.uniq{border-color:var(--gold)} .chip.uniq .cn{color:var(--gold-hi)}
+  .tray-empty{font-size:9.5px;color:var(--tan-dim);font-style:italic;padding:8px 2px}
+
+  .tray-right{flex:0 0 auto;width:288px;display:flex;flex-direction:column;gap:6px;border-left:1px solid var(--edge);padding-left:16px}
+  .verdict{border-radius:6px;padding:7px 10px;background:#0f0b06;border:1px solid var(--edge)}
+  .verdict .vd-t{font-family:'Cinzel',serif;font-weight:700;font-size:13px;letter-spacing:.03em}
+  .verdict .vd-s{font-size:9px;color:#b6a888;line-height:1.4;margin-top:2px}
+  .verdict.balanced{border-color:var(--gold);box-shadow:0 0 14px rgba(232,184,74,.16)}
+  .verdict.balanced .vd-t{color:var(--gold-hi)}
+  .verdict.narrow .vd-t{color:var(--a2)}
+  .verdict.thin .vd-t{color:var(--alarm)}
+  .verdict.over .vd-t{color:var(--alarm)}
+  .verdict.empty .vd-t{color:var(--tan-dim)}
+  .vd-foot{display:flex;align-items:center;gap:10px}
+  .pips{display:flex;gap:4px}
+  .pip{width:9px;height:9px;border-radius:50%;background:#0d1520;border:1px solid var(--lock-bd);transition:all .25s}
+  .pip.lit{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 6px rgba(111,195,224,.55)}
+  .pip.full{background:var(--gold);border-color:var(--gold);box-shadow:0 0 7px rgba(232,184,74,.6)}
+  .badge{margin-left:auto;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;
+    border:1px solid var(--lock-bd);border-radius:4px;color:var(--tan-dim);transition:all .4s;white-space:nowrap}
+  .badge.earned{background:var(--gold);color:#120e08;border-color:var(--gold);box-shadow:0 0 14px rgba(232,184,74,.55);font-weight:600}
+  .tray-pop{font-size:9px;color:var(--tan-dim)}
+  .tray-pop b{color:var(--cyan)}
+
+  .meta{position:fixed;bottom:4px;right:11px;font-size:7.5px;letter-spacing:.05em;color:#4c4132;pointer-events:none;text-align:right;line-height:1.5}
+  .meta b{color:#6a5d43}
+  .scrollhint{position:absolute;top:6px;right:14px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#4c4132;pointer-events:none;z-index:2}
+  .stage::-webkit-scrollbar,.civrail::-webkit-scrollbar,.chips::-webkit-scrollbar,.dbody::-webkit-scrollbar{height:9px;width:9px}
+  .stage::-webkit-scrollbar-thumb,.civrail::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb,.dbody::-webkit-scrollbar-thumb{background:#3a2d1a;border-radius:5px}
+  .stage::-webkit-scrollbar-track,.civrail::-webkit-scrollbar-track{background:#0e0a06}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="res" id="res"></div>
+    <div class="spring"></div>
+    <div class="agetrack" id="agetrack"></div>
+  </div>
+
+  <div class="civrail">
+    <span class="civ-lead">CIVILIZATION</span>
+    <div id="civs" style="display:flex;gap:8px"></div>
+    <div class="rail-sp"></div>
+    <button class="dossier-toggle" id="dossierBtn">▤ war dossier</button>
+  </div>
+
+  <div class="body-wrap">
+    <div class="stage" id="stage">
+      <div class="scrollhint">◂ scroll · click a unit to draft it ▸</div>
+      <div class="plane" id="plane"><svg class="wires" id="wires"></svg></div>
+    </div>
+    <!-- DOSSIER -->
+    <div class="dossier" id="dossier">
+      <div class="tabs">
+        <div class="tab on" data-t="army"     onclick="setTab('army')">Army</div>
+        <div class="tab"    data-t="cost"     onclick="setTab('cost')">Cost</div>
+        <div class="tab"    data-t="counters" onclick="setTab('counters')">Counters</div>
+        <div class="tab"    data-t="road"     onclick="setTab('road')">Roadmap</div>
+      </div>
+      <div class="dbody" id="dbody"></div>
+    </div>
+  </div>
+
+  <!-- ARMY TRAY -->
+  <div class="tray">
+    <div class="tray-left">
+      <div class="tray-hd">
+        <span class="th-t" id="trayCiv">Español</span>
+        <span class="th-s">war party — click tree units to draft · click a chip to remove</span>
+        <button class="th-clear" onclick="clearArmy()">disband</button>
+      </div>
+      <div class="chips" id="chips"><span class="tray-empty">No units drafted. Click a unit in the tech tree to add it — its cost is deducted live. You field only what you pay for.</span></div>
+    </div>
+    <div class="tray-right">
+      <div class="verdict empty" id="verdict">
+        <div class="vd-t" id="vdT">EMPTY WAR PARTY</div>
+        <div class="vd-s" id="vdS">Draft units to compose an army. A balanced spread across faculties is the attractor; one-dimensional armies berm against their counter.</div>
+      </div>
+      <div class="vd-foot">
+        <div class="pips" id="pips"></div>
+        <div class="tray-pop" id="trayPop">pop <b>0</b></div>
+        <div class="badge" id="badge">war party ready</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="meta"><b>AGE OF LENGUAGES</b> · v1.2 — the war council<br>draft · live cost · verdict · earnable badge — the price is always paid<br>two-army combat → v1.3</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  AGE OF LENGUAGES · v1.2 — THE WAR COUNCIL   (copy of v1.1 + Atelier UI)
+// ════════════════════════════════════════════════════════════════════════
+const AGES = [
+  { n:'Dark Age',n2:'Dark',     cefr:'A1 · survival' },
+  { n:'Feudal Age',n2:'Feudal', cefr:'A2–B1 · conversational' },
+  { n:'Castle Age',n2:'Castle', cefr:'B2 · fluent' },
+  { n:'Imperial Age',n2:'Imperial', cefr:'C1–C2 · native-like' },
+];
+const AGE_TAG=['A1','B1','B2','C1'];
+
+// budgets — Immersion (gold) is the scarce premium resource
+const RES = [
+  { k:'t', col:'var(--food)',      lab:'Time',      budget:200 },
+  { k:'r', col:'var(--wood)',      lab:'Reps',      budget:180 },
+  { k:'i', col:'var(--goldres)',   lab:'Immersion', budget:60  },
+  { k:'g', col:'var(--stone-res)', lab:'Grammar',   budget:100 },
+];
+
+const BUILDINGS = [
+  { id:'phon', ico:'🗡️', name:'Barracks', faculty:'Phonology',
+    blurb:'The cheap frontline you mass from minute one — the raw sounds.',
+    lines:[
+      { units:[
+        {age:0,name:'Phoneme',      real:'sound inventory',    gloss:'a single contrastive sound',      beats:'silence',            beatenBy:'L1 accent'},
+        {age:1,name:'Syllable',     real:'phonotactics',       gloss:'legal sound combinations',        beats:'mispronunciation',   beatenBy:'consonant clusters'},
+        {age:2,name:'Minimal Pair', real:'phonemic contrast',  gloss:'ship vs sheep · дед vs дід',       beats:'ambiguity',          beatenBy:'merged vowels'},
+        {age:3,name:'Prosody',      real:'stress & intonation',gloss:'the melody that carries meaning', beats:'flat robotic speech',beatenBy:'tone-deafness'},
+      ]},
+      { units:[
+        {age:1,name:'Contrast Drill', real:'perception training',gloss:'hearing a distinction you can\'t yet make', beats:'false-friend cavalry', beatenBy:'boredom', tech:'contrast'},
+        {age:2,name:'Discrimination', real:'perceptual tuning',  gloss:'auto-sorting hard phonemes',               beats:'L1 transfer',          beatenBy:'fossilization', tech:'contrast'},
+      ]},
+    ]},
+  { id:'lex', ico:'🏹', name:'Archery Range', faculty:'Lexicon',
+    blurb:'The cognate archers — ranged units that reach across the language gap.',
+    lines:[
+      { units:[
+        {age:1,name:'Cognate',      real:'shared-root word', gloss:'noche · notte · Nacht — free hits', beats:'blank vocabulary',   beatenBy:'false friends'},
+        {age:2,name:'Word Family',  real:'derivational set', gloss:'nation · national · nationalise',   beats:'one-off memorising', beatenBy:'irregular derivation'},
+        {age:3,name:'Root Cluster', real:'PIE / Greek etymon',gloss:'the trunk every branch grew from', beats:'whole semantic fields',beatenBy:'semantic drift'},
+      ]},
+      { units:[
+        {age:1,name:'F-Friend Guard',real:'faux-ami awareness',gloss:'embarazada ≠ embarrassed',        beats:'cognate over-trust', beatenBy:'rare traps', tech:'fauxami'},
+        {age:2,name:'Register Skirm',real:'connotation guard', gloss:'right word, wrong tone',           beats:'literal translation',beatenBy:'nuance', tech:'fauxami'},
+      ]},
+      { units:[
+        {age:3,name:'Loanword',     real:'borrowed lexicon',  gloss:'weekend · компьютер — modern imports', beats:'tech vocabulary', beatenBy:'purism', tech:'loan'},
+      ]},
+    ]},
+  { id:'syn', ico:'🐎', name:'Stable', faculty:'Syntax',
+    blurb:'The heavy cavalry that wins games — grammar is what carries you once vocab is massed.',
+    lines:[
+      { units:[
+        {age:1,name:'Word Order',   real:'basic clause',   gloss:'S–V–O and its cousins',        beats:'word salad',    beatenBy:'free-order tongues'},
+        {age:2,name:'Clause Chain', real:'coordination',   gloss:'stringing clauses that hold',   beats:'choppy speech', beatenBy:'subordination'},
+        {age:3,name:'Fluent Syntax',real:'native parsing', gloss:'sentences assemble themselves', beats:'hesitation',    beatenBy:'garden paths'},
+      ]},
+      { units:[
+        {age:2,name:'Agreement',   real:'gender/number concord',gloss:'la casa blanca — all must match', beats:'careless errors', beatenBy:'gender chaos', tech:'agree'},
+        {age:3,name:'Case System', real:'declension of role',   gloss:'who-did-what marked on the noun', beats:'ambiguity',       beatenBy:'6 cases × 3 genders', tech:'case'},
+      ]},
+      { units:[
+        {age:2,name:'Anti-Transfer',real:'interference block',  gloss:'resisting your L1\'s grammar pull',beats:'case-system cavalry',beatenBy:'entrenchment', tech:'antitransfer'},
+      ]},
+    ]},
+  { id:'morph', ico:'🪓', name:'Siege Workshop', faculty:'Morphology',
+    blurb:'Siege engines break walls; morphology breaks long words into roots and affixes.',
+    lines:[
+      { units:[
+        {age:2,name:'Conjugation Ram',real:'verb paradigm',        gloss:'hablo·hablas·habla — grind the endings',beats:'verb walls', beatenBy:'irregular verbs', tech:'conj'},
+        {age:3,name:'Aspect Engine',  real:'perfective/imperfective',gloss:'was-doing vs did — Slavic siege',      beats:'flat tenses',beatenBy:'aspect pairs', tech:'aspect'},
+      ]},
+      { units:[
+        {age:2,name:'Declension',   real:'case endings',  gloss:'one ending hits a whole word-class', beats:'fixed forms', beatenBy:'exceptions', tech:'decl'},
+      ]},
+      { units:[
+        {age:1,name:'Affix Bolt',    real:'prefix / suffix',  gloss:'un- · -ción · -ность',        beats:'unknown words',    beatenBy:'opaque roots'},
+        {age:3,name:'Agglutination', real:'stacked morphemes',gloss:'building a word like a train', beats:'analytic guessing',beatenBy:'sheer length', tech:'agglut'},
+      ]},
+    ]},
+  { id:'prag', ico:'⛪', name:'Monastery', faculty:'Pragmatics',
+    blurb:'Monks convert enemy units — idiom and cultural frame convert YOU into thinking native.',
+    lines:[
+      { units:[
+        {age:2,name:'Idiom Monk',  real:'fixed expression', gloss:'kick the bucket · dar en el clavo', beats:'literal minds', beatenBy:'opacity'},
+        {age:3,name:'Frame Switch',real:'cultural framing', gloss:'switching the self you think in',    beats:'translation lag',beatenBy:'deep entrenchment', tech:'frame'},
+      ]},
+      { units:[
+        {age:2,name:'Relic · saudade',real:'untranslatable',gloss:'held in the monastery — yields insight over time', beats:'—', beatenBy:'—', relic:true},
+      ]},
+    ]},
+  { id:'listen', ico:'⛵', name:'Dock', faculty:'Listening',
+    blurb:'The navy is the immersion stream — the sea of native speech. (v1.4: the immersion Kernel.)',
+    lines:[
+      { units:[
+        {age:0,name:'Passive Ear',  real:'ambient input',   gloss:'the sound-bath before you understand',beats:'silence',         beatenBy:'tuning out'},
+        {age:1,name:'Shadowing',    real:'echo the speaker',gloss:'saying it a half-second behind',       beats:'passive-only study',beatenBy:'speed'},
+        {age:2,name:'Transcription',real:'catch every word',gloss:'writing down the stream',              beats:'gist-only listening',beatenBy:'fast speech'},
+        {age:3,name:'Native Ear',   real:'effortless input',gloss:'you stop hearing "a foreign language"',beats:'subtitles',       beatenBy:'thick dialects'},
+      ]},
+    ]},
+];
+
+const CIVS = [
+  { k:'es', flag:'🇦🇷', name:'Español', epithet:'the cavalry civ', color:'#74acd6',
+    bonus:'Phonetic spelling: Phonology units train 50% faster — you say what you read.',
+    team:'Romance allies share the cognate archer-line (a huge A∩B).',
+    missing:['case','aspect','agglut'],
+    unique:{building:'syn', age:2, name:'El Voseo', real:'voseo · vos tenés', gloss:'the Rioplatense conjugation cavalry'},
+    uTech:'Subjuntivo — mood laid over every clause (Imperial).' },
+  { k:'en', flag:'🇬🇧', name:'English', epithet:'archer civ · lingua franca', color:'#c0492f',
+    bonus:'Loanword empire: Lexicon units cost nothing to unlock — you half-know everyone\'s words.',
+    team:'Allies field the Loanword line for free.',
+    missing:['case','agree','decl','aspect','agglut'],
+    unique:{building:'syn', age:3, name:'Phrasal Verb', real:'get up / over / by', gloss:'the notorious unit — infinite, idiomatic, un-guessable'},
+    uTech:'Great Vowel Shift — spelling and sound divorced forever.' },
+  { k:'pt', flag:'🇵🇹', name:'Português', epithet:'the Spanish sister civ', color:'#5aa06a',
+    bonus:'Near-free transfer from Español (A∩B is enormous) — but nasal phonology is a hard wall.',
+    team:'Iberian union: shares almost the whole tree with Español.',
+    missing:['case','aspect','agglut'],
+    unique:{building:'phon', age:3, name:'Nasal Vowel', real:'ã · õ · ões', gloss:'the phonology unit no sister civ can copy'},
+    uTech:'Mesóclise — a pronoun lodged inside the verb (dar-lhe-ei).' },
+  { k:'ru', flag:'🇷🇺', name:'Русский', epithet:'the siege · morphology civ', color:'#8f7fd0',
+    bonus:'Six-case system: Siege (Morphology) units are devastating; aspect pairs on every verb.',
+    team:'Shares Cyrillic + Slavic roots with Українська.',
+    missing:['loan','fauxami'],
+    unique:{building:'syn', age:3, name:'Verb of Motion', real:'идти vs ходить', gloss:'go-once-on-foot vs go-habitually — the brutal unit'},
+    uTech:'Вид (Aspect) — perfective / imperfective as a way of seeing.' },
+  { k:'uk', flag:'🇺🇦', name:'Українська', epithet:'the Russian sister civ', color:'#d8c24a',
+    bonus:'Near-free transfer from Русский (Slavic A∩B) — but the vocative case and softer phonology diverge.',
+    team:'Slavic union: shares Cyrillic and most roots with Русский.',
+    missing:['loan','fauxami'],
+    unique:{building:'syn', age:2, name:'The Vocative', real:'кличний · Оле! Пане!', gloss:'the case for calling out — a 7th cavalry the sister civ dropped'},
+    uTech:'Ikavism — where о became і (кіт, not кот).' },
+  { k:'el', flag:'🇬🇷', name:'Ελληνικά', epithet:'★ the keystone civ', color:'#4a90d9', keystone:true,
+    bonus:'Root of BOTH alphabets and all technical vocabulary. Every -ology, -graph, -phone, -meter is a free Greek unit.',
+    team:'Keystone: every other civ draws its technical lexicon from Greek.',
+    missing:['loan'],
+    unique:{building:'lex', age:3, name:'The Alphabet', real:'α → A and А', gloss:'the literal trunk: the Wonder that seeds Latin AND Cyrillic'},
+    uTech:'Aorist + Polytonic Accent — the deepest tense and the oldest breath-marks.' },
+];
+
+// ── COST MODEL — derived from age + faculty (honest, not hand-faked) ──
+// Immersion (i) is scarce: idiom/listening + high tiers + uniques cost it most.
+function unitCost(u, bId){
+  const a = u.age;
+  let t = 8 + a*8;                                   // Time (food): everything
+  let r = ({lex:14, morph:11, phon:8}[bId]||6) + a*3; // Reps (wood): vocab/morph heavy
+  let g = ({syn:12, morph:10}[bId]||3) + (a>=2? a*2:0); // Grammar (stone): syntax/morph
+  let i = ({prag:12, listen:9}[bId]||0) + (a>=2? (a-1)*4:0); // Immersion (gold): scarce
+  if(u.uniq){ i+=8; g+=4; t+=6; }
+  if(u.relic){ i+=6; r=4; g=2; }
+  return { t:Math.round(t), r:Math.round(r), i:Math.round(i), g:Math.round(g) };
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  LAYOUT (from v1.1 — lane-based)
+// ════════════════════════════════════════════════════════════════════════
+const LEFT=150, AGE_TOP=68, AGE_H=132, NODEW=118, GAP_X=14, COLGAP=28, Y_OFF=30, RIGHTPAD=40;
+const LANEW = NODEW + GAP_X;
+let activeCiv = CIVS[0];
+let allNodes=[], colX=[], colW=[], totalW=0, totalH=0;
+let army = {};       // uid -> count
+let dossierOpen=false, dTab='army';
+
+function civHas(t){ return !t || !(activeCiv.missing && activeCiv.missing.indexOf(t)>=0); }
+function lanesOf(b){ return b.lines.length + ((activeCiv.unique&&activeCiv.unique.building===b.id)?1:0); }
+
+function computeLayout(){
+  allNodes=[]; colX=[]; colW=[]; let x=LEFT;
+  BUILDINGS.forEach((b,bi)=>{
+    const lanes=lanesOf(b), w=lanes*LANEW-GAP_X; colX[bi]=x; colW[bi]=w;
+    const headerX=x+w/2;
+    b.lines.forEach((line,li)=>{
+      const laneX=x+li*LANEW; let prev=null;
+      line.units.forEach((u,ui)=>{
+        const uid=b.id+'_'+li+'_'+ui;
+        const y=AGE_TOP+u.age*AGE_H+Y_OFF;
+        const locked=!u.relic&&u.tech&&!civHas(u.tech);
+        allNodes.push({uid,x:laneX,y,u,bId:b.id,bi,prevUid:prev,headerY:32,locked,firstInLane:ui===0});
+        prev=uid;
+      });
+    });
+    if(activeCiv.unique&&activeCiv.unique.building===b.id){
+      const uq=activeCiv.unique, laneX=x+b.lines.length*LANEW, y=AGE_TOP+uq.age*AGE_H+Y_OFF;
+      allNodes.push({uid:'uniq_'+b.id,x:laneX,y,bId:b.id,bi,prevUid:null,headerY:32,locked:false,firstInLane:true,
+        u:{...uq,beats:'(civ-defining)',beatenBy:'no other civ has it',uniq:true}});
+    }
+    x+=w+COLGAP;
+  });
+  totalW=x-COLGAP+RIGHTPAD; totalH=AGE_TOP+AGES.length*AGE_H+30;
+}
+function nodeById(uid){ return allNodes.find(n=>n.uid===uid); }
+
+// ════════════════════════════════════════════════════════════════════════
+//  RENDER — shell
+// ════════════════════════════════════════════════════════════════════════
+function renderTopBar(){
+  renderMeter();
+  const at=document.getElementById('agetrack');
+  at.innerHTML=AGES.map((a,i)=>`<div class="agebtn age-${i} ${i===0?'on':''}" data-age="${i}">
+    <span class="ag-n">${a.n}</span><span class="ag-c">${a.cefr}</span></div>`).join('');
+  at.querySelectorAll('.agebtn').forEach(el=>el.onclick=()=>{
+    at.querySelectorAll('.agebtn').forEach(e=>e.classList.remove('on')); el.classList.add('on'); });
+}
+function totals(){
+  const s={t:0,r:0,i:0,g:0}, pop=Object.values(army).reduce((a,b)=>a+b,0);
+  Object.keys(army).forEach(uid=>{ const n=nodeById(uid); if(!n)return; const c=unitCost(n.u,n.bId);
+    s.t+=c.t*army[uid]; s.r+=c.r*army[uid]; s.i+=c.i*army[uid]; s.g+=c.g*army[uid]; });
+  return {s,pop};
+}
+function renderMeter(){
+  const {s}=totals();
+  document.getElementById('res').innerHTML=RES.map(x=>{
+    const spent=s[x.k], over=spent>x.budget, pct=Math.min(100,spent/x.budget*100);
+    return `<div class="rmeter">
+      <div class="rtop"><span class="dot" style="background:${x.col};color:${x.col}"></span>
+        <span class="rlab">${x.lab}</span>
+        <span class="rspent ${over?'over':''}">${spent}<span class="rbud">/${x.budget}</span></span></div>
+      <div class="rbar"><span style="width:${pct}%;background:${over?'var(--alarm)':x.col}"></span></div></div>`;
+  }).join('');
+}
+
+function renderCivs(){
+  const host=document.getElementById('civs');
+  host.innerHTML=CIVS.map(c=>`<div class="shield ${c.k===activeCiv.k?'on':''}" data-civ="${c.k}" title="${c.name} — ${c.epithet}">
+    <span class="civdot" style="background:${c.color}"></span><span class="flag">${c.flag}</span>
+    <span class="cv"><span class="cv-n">${c.name}</span><span class="cv-e">${c.epithet}</span></span></div>`).join('');
+  host.querySelectorAll('.shield').forEach(el=>el.onclick=()=>{
+    activeCiv=CIVS.find(x=>x.k===el.dataset.civ); army={}; renderAll(); });
+}
+
+function renderStatic(){
+  const plane=document.getElementById('plane');
+  plane.querySelectorAll('.band,.bhead,.center-mark').forEach(e=>e.remove());
+  AGES.forEach((a,i)=>{
+    const band=document.createElement('div'); band.className='band b'+i;
+    band.style.top=(AGE_TOP+i*AGE_H)+'px'; band.style.width=totalW+'px'; band.style.height=AGE_H+'px';
+    band.innerHTML=`<div class="band-rule"></div><div class="band-fill"></div>
+      <div class="band-lab"><span class="bl-age">${a.n2}</span><span class="bl-cefr">${a.cefr}</span></div>`;
+    plane.appendChild(band);
+  });
+  BUILDINGS.forEach((b,bi)=>{
+    const h=document.createElement('div'); h.className='bhead';
+    h.style.left=colX[bi]+'px'; h.style.width=colW[bi]+'px';
+    h.innerHTML=`<span class="ico">${b.ico}</span><span class="bh-n">${b.faculty}</span><span class="bh-b">${b.name}</span>`;
+    plane.appendChild(h);
+  });
+  const cm=document.createElement('div'); cm.className='center-mark';
+  cm.style.left=(LEFT+(totalW-LEFT-RIGHTPAD)/2)+'px'; cm.style.top=(AGE_TOP+2.5*AGE_H)+'px';
+  cm.innerHTML=`<div class="cm-g">ἀγάπη</div><div class="cm-l">the center · held, not built</div>`;
+  plane.appendChild(cm);
+  plane.style.width=totalW+'px'; plane.style.height=totalH+'px';
+}
+
+function renderNodes(){
+  const plane=document.getElementById('plane');
+  plane.querySelectorAll('.unit').forEach(e=>e.remove());
+  allNodes.forEach(n=>{
+    const u=n.u, b=BUILDINGS.find(x=>x.id===n.bId), c=unitCost(u,n.bId);
+    const cnt=army[n.uid]||0;
+    const div=document.createElement('div');
+    div.className='unit'+(u.uniq?' unique':'')+(u.relic?' unique':'')+(n.locked?' locked':'')+(cnt>0?' drafted':'');
+    div.style.left=n.x+'px'; div.style.top=n.y+'px'; div.style.width=NODEW+'px';
+    div.title = n.locked ? (u.name+' — LOCKED: '+activeCiv.name+' lacks this tech')
+      : (u.name+(u.real?' ('+u.real+')':'')+'  ▲ beats '+(u.beats||'—')+'   ▼ weak to '+(u.beatenBy||'—'));
+    const costHtml = u.relic ? '' :
+      `<div class="u-cost">
+        <span title="Time"><i style="background:var(--food)"></i>${c.t}</span>
+        <span title="Reps"><i style="background:var(--wood)"></i>${c.r}</span>
+        ${c.i?`<span title="Immersion"><i style="background:var(--goldres)"></i>${c.i}</span>`:''}
+        ${c.g?`<span title="Grammar"><i style="background:var(--stone-res)"></i>${c.g}</span>`:''}
+      </div>`;
+    div.innerHTML=`<span class="u-count">${cnt}</span>
+      <div class="u-top"><span class="u-ico">${b.ico}</span><span class="u-name">${u.name}</span></div>
+      <div class="u-gloss">${u.gloss}</div>
+      ${u.uniq?'<span class="u-star">★</span>':(u.relic?'':`<span class="u-tier">${AGE_TAG[u.age]}</span>`)}
+      ${costHtml}
+      ${n.locked?'<span class="u-x">✕</span>':''}`;
+    if(!n.locked && !u.relic) div.onclick=()=>draftUnit(n.uid);
+    if(u.relic) div.onclick=()=>{ openDossier('army'); };
+    plane.appendChild(div);
+  });
+  renderWires();
+}
+function renderWires(){
+  const svg=document.getElementById('wires'); svg.innerHTML='';
+  svg.setAttribute('width',totalW); svg.setAttribute('height',totalH);
+  const byId={}; allNodes.forEach(n=>byId[n.uid]=n);
+  allNodes.forEach(n=>{
+    if(n.firstInLane){ svg.appendChild(mk(n.x+NODEW/2,n.headerY+8,n.x+NODEW/2,n.y+2,'head')); }
+    if(n.prevUid&&byId[n.prevUid]){ const p=byId[n.prevUid];
+      svg.appendChild(mk(p.x+NODEW/2,p.y+40,n.x+NODEW/2,n.y+2,(n.locked||p.locked)?'locked':'up')); }
+  });
+  function mk(x1,y1,x2,y2,cls){ const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('class',cls);return l; }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  DRAFT + TRAY + VERDICT
+// ════════════════════════════════════════════════════════════════════════
+function draftUnit(uid){ army[uid]=(army[uid]||0)+1; refreshArmy(); }
+function undraft(uid){ if(!army[uid])return; army[uid]--; if(army[uid]<=0) delete army[uid]; refreshArmy(); }
+function clearArmy(){ army={}; refreshArmy(); }
+
+function refreshArmy(){
+  renderMeter(); renderNodes(); renderTray(); renderVerdict();
+  if(dossierOpen) renderDossier();
+}
+
+function facultyOf(bId){ return (BUILDINGS.find(b=>b.id===bId)||{}).faculty||'?'; }
+
+function armyStats(){
+  const byFac={}, list=[]; let pop=0;
+  Object.keys(army).forEach(uid=>{
+    const n=nodeById(uid); if(!n)return; const cnt=army[uid];
+    byFac[n.bId]=(byFac[n.bId]||0)+cnt; pop+=cnt;
+    list.push({uid,n,cnt});
+  });
+  const spread=Object.keys(byFac).length;
+  const {s}=totals();
+  const over = RES.filter(x=>s[x.k]>x.budget).map(x=>x.lab);
+  return {byFac,list,pop,spread,spent:s,over};
+}
+
+function renderTray(){
+  document.getElementById('trayCiv').textContent=activeCiv.name+' — war party';
+  const {list,pop}=armyStats();
+  const host=document.getElementById('chips');
+  if(!list.length){ host.innerHTML='<span class="tray-empty">No units drafted. Click a unit in the tech tree to add it — its cost is deducted live. You field only what you pay for.</span>'; }
+  else{
+    // sort by building order then age
+    list.sort((a,b)=> (a.n.bi-b.n.bi) || (a.n.u.age-b.n.u.age));
+    host.innerHTML=list.map(({uid,n,cnt})=>{
+      const b=BUILDINGS.find(x=>x.id===n.bId);
+      return `<span class="chip ${n.u.uniq?'uniq':''}" data-uid="${uid}" title="click to remove one">
+        <span class="ci">${b.ico}</span><span class="cn">${n.u.name}</span>
+        <span class="cx">×${cnt}</span><span class="cm">${AGE_TAG[n.u.age]}</span></span>`;
+    }).join('');
+    host.querySelectorAll('.chip').forEach(el=>el.onclick=()=>undraft(el.dataset.uid));
+  }
+  document.getElementById('trayPop').innerHTML=`pop <b>${pop}</b>`;
+}
+
+function renderVerdict(){
+  const st=armyStats();
+  const vEl=document.getElementById('verdict'), tEl=document.getElementById('vdT'), sEl=document.getElementById('vdS'),
+        bEl=document.getElementById('badge');
+  // faculty pips
+  const pipHost=document.getElementById('pips');
+  pipHost.innerHTML=BUILDINGS.map(b=>{
+    const has=st.byFac[b.id]||0; const cls=has? (st.spread>=3?'full':'lit'):'';
+    return `<span class="pip ${cls}" title="${b.faculty}${has?' ·×'+has:''}"></span>`;
+  }).join('');
+
+  vEl.className='verdict';
+  if(st.pop===0){
+    vEl.classList.add('empty');
+    tEl.textContent='EMPTY WAR PARTY';
+    sEl.textContent='Draft units to compose an army. A balanced spread across faculties is the attractor; one-dimensional armies berm against their counter.';
+    bEl.className='badge'; bEl.textContent='war party ready';
+    return;
+  }
+  if(st.over.length){
+    vEl.classList.add('over');
+    tEl.textContent='OVER-EXTENDED';
+    sEl.innerHTML=`<span class="bad">${st.over.join(' & ')} overdrawn.</span> Like too much water in the sand, the bed fluidizes and the titan sinks — you can\'t field what you haven\'t paid for. Disband some units${st.over.indexOf('Immersion')>=0?' or free up Immersion (the scarce one)':''}.`;
+    bEl.className='badge'; bEl.textContent='over budget';
+    return;
+  }
+  // dominant faculty
+  let domF=null,domN=0; Object.keys(st.byFac).forEach(f=>{ if(st.byFac[f]>domN){domN=st.byFac[f];domF=f;} });
+  const domName=facultyOf(domF);
+  if(st.spread>=3){
+    vEl.classList.add('balanced');
+    tEl.textContent='BALANCED — THE ATTRACTOR HOLDS';
+    sEl.innerHTML=`${st.spread} faculties in play, within budget. This is the self-stabilising composition — no single counter berms it. Lean: <b style="color:var(--tan)">${domName}</b>.`;
+    bEl.className='badge earned'; bEl.textContent='✓ war party ready';
+  } else if(st.spread===2){
+    vEl.classList.add('narrow');
+    tEl.textContent=domName.toUpperCase()+' LEAN — NARROW';
+    sEl.innerHTML=`Only 2 faculties. Workable, but a mixed enemy can pick the gap. Add a third faculty to reach the attractor.`;
+    bEl.className='badge'; bEl.textContent='needs a 3rd faculty';
+  } else {
+    vEl.classList.add('thin');
+    tEl.textContent=domName.toUpperCase()+' RUSH — ONE-DIMENSIONAL';
+    sEl.innerHTML=`All-in on <b style="color:var(--tan)">${domName}</b>. Fast, but it <span class="bad">berms</span> the moment the enemy fields its hard counter. Spread across faculties to stabilise.`;
+    bEl.className='badge'; bEl.textContent='will berm';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  DOSSIER (apollonium tabbed receipts)
+// ════════════════════════════════════════════════════════════════════════
+function openDossier(tab){ dossierOpen=true; if(tab)dTab=tab; syncDossier(); }
+function toggleDossier(){ dossierOpen=!dossierOpen; syncDossier(); }
+function setTab(t){ dTab=t; document.querySelectorAll('.dossier .tab').forEach(el=>el.classList.toggle('on',el.dataset.t===t)); renderDossier(); }
+function syncDossier(){
+  document.getElementById('dossier').classList.toggle('open',dossierOpen);
+  document.getElementById('dossierBtn').classList.toggle('on',dossierOpen);
+  document.querySelectorAll('.dossier .tab').forEach(el=>el.classList.toggle('on',el.dataset.t===dTab));
+  if(dossierOpen) renderDossier();
+}
+function renderDossier(){
+  const body=document.getElementById('dbody'); const st=armyStats(); const c=activeCiv;
+  if(dTab==='army'){
+    const miss=(c.missing||[]).map(techLabel).filter(Boolean);
+    body.innerHTML=`<h5>${c.flag} ${c.name} — ${c.epithet}</h5>
+      <div class="li"><span class="s">civ bonus</span><br>${c.bonus}</div>
+      <div class="li"><span class="s">team bonus</span><br>${c.team}</div>
+      ${miss.length?`<div class="li"><span class="s">missing tech</span><br><span class="bad">✕ ${miss.join(' · ')}</span></div>`:''}
+      <div class="li"><span class="s">unique tech</span><br><span class="g">${c.uTech}</span></div>
+      <h5>War party · ${st.pop} units</h5>
+      ${st.list.length? st.list.map(({n,cnt})=>`<div class="li"><span class="nm">${n.u.name}</span> <span class="k">×${cnt}</span> <span class="s">· ${facultyOf(n.bId)} · ${AGE_TAG[n.u.age]}</span></div>`).join('') : '<div class="s">nothing drafted yet.</div>'}`;
+  } else if(dTab==='cost'){
+    const rows=RES.map(x=>{ const spent=st.spent[x.k],over=spent>x.budget,pct=Math.min(100,spent/x.budget*100);
+      return `<div class="crow"><span>${x.lab}</span><span class="${over?'bad':'k'}">${spent} / ${x.budget}</span></div>
+        <div class="cbar"><div style="width:${pct}%;background:${over?'var(--alarm)':x.col}"></div></div>`; }).join('');
+    body.innerHTML=`<h5>Bill of quantities — live</h5>${rows}
+      <div class="s" style="margin-top:6px">Immersion (gold) is the scarce resource — native contact you can\'t buy with reps. Overdraw it and the verdict flips to <span class="bad">OVER-EXTENDED</span>. Costs derive from tier + faculty, not hand-faked.</div>`;
+  } else if(dTab==='counters'){
+    body.innerHTML=`<h5>Counter web</h5>${st.list.length? st.list.map(({n})=>
+      `<div class="li"><span class="nm">${n.u.name}</span><br><span class="s">▲ beats </span><span style="color:var(--green)">${n.u.beats||'—'}</span><br><span class="s">▼ weak to </span><span class="bad">${n.u.beatenBy||'—'}</span></div>`).join('')
+      : '<div class="s">draft units to see their counters. In v1.3 these force-chains resolve two armies against each other — like grains in wet sand.</div>'}`;
+  } else {
+    body.innerHTML=`<h5>The version journey</h5>
+      <div class="droadmap">
+        <div class="rm"><span class="mk">✓</span><span><b style="color:var(--tan)">v1.1</b> — the tech tree: civ = language, unit = a core structure. Nodes + edges = the ported graph.</span></div>
+        <div class="rm next"><span class="mk">◆</span><span><b style="color:var(--gold-hi)">v1.2</b> — the war council (this): draft, live cost, verdict, earnable badge. You field only what you pay for.</span></div>
+        <div class="rm todo"><span class="mk">○</span><span><b>v1.3</b> — two armies fight: your war party vs an enemy comp, counters resolving as graph force-chains (bersha).</span></div>
+        <div class="rm todo"><span class="mk">○</span><span><b>v1.4</b> — the immersion Kernel: the marble, the well, the click — carve L2 against the L1 pull.</span></div>
+      </div>
+      <div class="s" style="margin-top:8px">Every step is a frozen artifact; the highest number is current. The price is always paid, in the open. The center is held, not shown: ἀγάπη.</div>`;
+  }
+}
+function techLabel(id){ return ({case:'case system',aspect:'verb aspect',agglut:'agglutination',agree:'gender agreement',
+  decl:'declension',loan:'loanwords',fauxami:'false-friend guard',conj:'conjugation',contrast:'contrast drills',
+  antitransfer:'anti-transfer',frame:'frame-switch'})[id]||id; }
+
+// ════════════════════════════════════════════════════════════════════════
+function renderAll(){
+  renderCivs(); computeLayout(); renderStatic(); renderNodes();
+  renderMeter(); renderTray(); renderVerdict(); if(dossierOpen) renderDossier();
+}
+document.getElementById('dossierBtn').onclick=toggleDossier;
+renderTopBar();
+renderAll();
+</script>
+</body>
+</html>

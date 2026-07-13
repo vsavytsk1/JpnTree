@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Age of Lenguages · The Click v1.9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:wght@500;600&display=swap" rel="stylesheet">
+<!--
+  AGE OF LENGUAGES · v1.9 — THE CLICK
+  ==========================================================================
+  The bow: three unit types, tight loop, nothing more. The click IS the rep.
+  Click a unit -> pay the price in RECALL (say the Spanish word in Greek,
+  recognised through the root you already carry) -> the unit strikes.
+  Fast + accurate feeds the dopamine goblin; the enemy marches or you learn.
+  Pretty (mirror-symmetric, a 12-gon turning at the centre) and spinny (the
+  selection ring). Motion the user asked for; prefers-reduced-motion still
+  dampens the ambient turn. The centre is held, not shown: ἀγάπη. Frozen (Path X).
+-->
+<style>
+  :root{
+    --bg:#0c0a12; --bg2:#080610; --panel:#141019; --edge:#2a2333; --edge2:#3d3348;
+    --tan:#cbb994; --dim:#7a7488;
+    --gold:#e8b84a; --gold-hi:#ffd76a; --cyan:#80d0ff; --green:#7fff7f; --red:#f87171; --purple:#a78bfa;
+    --es:#5fa8e6; --el:#e0a24a;             /* Español blue · Ἑλληνικά amber */
+    --es-glow:rgba(95,168,230,.5); --el-glow:rgba(224,162,74,.5);
+    --spin-core:11s; --spin-ring:0.8s; --usz:52px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:radial-gradient(130% 100% at 50% 0%, #14101c 0%, var(--bg) 55%, var(--bg2) 100%);
+    color:var(--tan);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;overflow:hidden;user-select:none}
+  .app{height:100vh;display:flex;flex-direction:column}
+
+  /* ── HUD ── */
+  .hud{flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:10px 18px;z-index:20}
+  .hud .brand{font-family:'Cinzel',serif;font-weight:800;font-size:16px;color:var(--gold);letter-spacing:.05em}
+  .hud .ver{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .stat{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:52px}
+  .stat .sv{font-family:'Cinzel',serif;font-weight:700;font-size:16px;line-height:1}
+  .stat .sl{font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .stat.score .sv{color:var(--gold-hi)} .stat.combo .sv{color:var(--cyan)}
+  .stat.acc .sv{color:var(--green)} .stat.tempo .sv{color:var(--purple)}
+  .hud-sp{flex:1}
+  .integrity{display:flex;flex-direction:column;gap:3px;min-width:180px}
+  .integrity .il{display:flex;justify-content:space-between;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .integrity .il .n{color:var(--es);font-family:'Cinzel',serif;font-weight:700}
+  .itrack{height:7px;background:#1b1622;border:1px solid #0d0a12;border-radius:4px;overflow:hidden}
+  .itrack>span{display:block;height:100%;background:linear-gradient(90deg,var(--es),#7cc0f0);transition:width .25s}
+  .itrack.low>span{background:linear-gradient(90deg,var(--red),#ff9a9a)}
+
+  /* ── FIELD ── */
+  .field{flex:1 1 auto;position:relative;min-height:0;overflow:hidden}
+  .midline{position:absolute;left:50%;top:4%;bottom:14%;width:1px;background:linear-gradient(#0000,#3d334880,#0000);transform:translateX(-.5px)}
+  .baseline{position:absolute;top:4%;bottom:14%;width:2px}
+  .baseline.es{left:7%;background:linear-gradient(#0000,var(--es-glow),#0000)}
+  .baseline.el{right:7%;background:linear-gradient(#0000,var(--el-glow),#0000)}
+  .side-name{position:absolute;top:8px;font-family:'Cinzel',serif;font-weight:700;font-size:13px;letter-spacing:.06em;opacity:.5}
+  .side-name.es{left:16px;color:var(--es)} .side-name.el{right:16px;color:var(--el)}
+
+  /* central 12-gon — the held centre */
+  .core{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);pointer-events:none;z-index:1;text-align:center}
+  .core svg{display:block;opacity:.13;animation:spin var(--spin-core) linear infinite}
+  .core .om{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Cinzel',serif;font-size:20px;color:var(--gold);opacity:.16}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* units */
+  .unit{position:absolute;width:var(--usz);height:var(--usz);transform:translate(-50%,-50%);cursor:pointer;z-index:5;
+    transition:left .45s cubic-bezier(.5,-0.3,.3,1.4),top .3s,opacity .3s}
+  .unit .disc{position:absolute;inset:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:calc(var(--usz)*0.38);border:2px solid;transition:transform .12s,box-shadow .2s}
+  .unit.es .disc{background:radial-gradient(circle at 40% 35%,#1e3a52,#0e1c2a);border-color:var(--es);color:#dcecfb}
+  .unit.el .disc{background:radial-gradient(circle at 40% 35%,#3a2c14,#241a0a);border-color:var(--el);color:#f6e8d0}
+  .unit.enemy{cursor:default}
+  .unit:not(.enemy):hover .disc{transform:translateY(-2px);box-shadow:0 0 16px var(--es-glow)}
+  .unit .hpwrap{position:absolute;left:6px;right:6px;bottom:-3px;height:3px;background:rgba(0,0,0,.5);border-radius:2px;overflow:hidden}
+  .unit .hp{height:100%;background:var(--green);transition:width .2s}
+  .unit .ready{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0}
+  .unit.ready-on .ready{opacity:1;box-shadow:0 0 0 2px rgba(127,255,159,.35);animation:readyPulse 1.4s ease-in-out infinite}
+  @keyframes readyPulse{0%,100%{box-shadow:0 0 0 2px rgba(127,255,159,.2)}50%{box-shadow:0 0 0 3px rgba(127,255,159,.55)}}
+  /* spinning selection ring — THE spin */
+  .unit .ring{position:absolute;inset:-4px;pointer-events:none;opacity:0;transition:opacity .15s}
+  .unit.sel .ring{opacity:1}
+  .unit.sel .disc{box-shadow:0 0 22px var(--es-glow)}
+  .unit .ring svg{width:100%;height:100%;animation:spin var(--spin-ring) linear infinite}
+  .unit.dead{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+  .unit.strike .disc{animation:strikeFlash .3s ease-out}
+  @keyframes strikeFlash{0%{box-shadow:0 0 0 rgba(255,240,220,0)}40%{box-shadow:0 0 26px rgba(255,240,220,.9)}100%{box-shadow:0 0 0 rgba(255,240,220,0)}}
+  .unit.hit .disc{animation:hitShake .3s}
+  @keyframes hitShake{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,1px)}75%{transform:translate(3px,-1px)}}
+
+  /* projectile */
+  .proj{position:absolute;width:14px;height:3px;border-radius:2px;background:linear-gradient(90deg,#fff0,var(--cyan));z-index:6;pointer-events:none;transform:translate(-50%,-50%)}
+
+  /* floating score */
+  .float{position:absolute;z-index:30;font-family:'Cinzel',serif;font-weight:700;pointer-events:none;
+    transform:translate(-50%,-50%);animation:floatUp 1.1s ease-out forwards;text-shadow:0 0 12px rgba(0,0,0,.8)}
+  @keyframes floatUp{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-140%)}}
+
+  /* combo banner */
+  .comboBanner{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:25;
+    font-family:'Cinzel',serif;font-weight:800;font-size:22px;color:var(--gold-hi);opacity:0;
+    text-shadow:0 0 22px rgba(232,184,74,.4);transition:opacity .25s;pointer-events:none}
+
+  /* ── PROMPT ── */
+  .prompt{flex:0 0 auto;min-height:118px;background:linear-gradient(#141019,#0d0a14);border-top:2px solid var(--edge);
+    padding:12px 18px;display:flex;align-items:center;gap:20px;z-index:20}
+  .pr-idle{color:var(--dim);font-size:12px;line-height:1.6;text-align:center;flex:1}
+  .pr-idle b{color:var(--tan)}
+  .pr-left{flex:0 0 auto;display:flex;flex-direction:column;gap:4px;min-width:220px}
+  .pr-cmd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:7px}
+  .pr-cmd .ci{font-size:15px}
+  .pr-word{font-family:'Spectral',serif;font-weight:600;font-size:30px;color:var(--gold-hi);line-height:1.1}
+  .pr-from{font-size:9px;color:var(--dim)}
+  .pr-timer{flex:0 0 auto;width:5px;align-self:stretch;background:#1b1622;border-radius:3px;overflow:hidden}
+  .pr-timer>span{display:block;width:100%;background:linear-gradient(var(--green),var(--gold));transition:height .1s linear}
+  .pr-opts{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .opt{background:linear-gradient(#1c1626,#151020);border:1px solid var(--edge2);border-radius:8px;padding:9px 12px;
+    cursor:pointer;display:flex;align-items:baseline;gap:9px;transition:all .12s;font-family:inherit}
+  .opt:hover{border-color:var(--cyan);background:#1e1830;transform:translateY(-1px)}
+  .opt .gk{font-family:'Spectral',serif;font-weight:600;font-size:20px;color:#f0e8d4}
+  .opt .rm{font-size:9px;color:var(--dim)}
+  .opt.correct{border-color:var(--green);background:rgba(127,255,159,.12);animation:optPop .3s}
+  .opt.wrong{border-color:var(--red);background:rgba(248,113,113,.12)}
+  @keyframes optPop{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+
+  /* ── BANNER ── */
+  .banner{position:absolute;inset:0;z-index:50;background:rgba(8,6,16,.86);display:none;align-items:center;justify-content:center}
+  .banner.show{display:flex}
+  .banner .bx{text-align:center;padding:26px 40px;border:2px solid var(--edge2);border-radius:14px;background:rgba(20,16,25,.96);max-width:460px}
+  .banner.win .bx{border-color:var(--gold)} .banner.lose .bx{border-color:var(--red)}
+  .banner .bt{font-family:'Cinzel',serif;font-weight:800;font-size:26px;margin-bottom:8px}
+  .banner.win .bt{color:var(--gold-hi)} .banner.lose .bt{color:var(--red)}
+  .banner .bs{font-size:12px;line-height:1.6;color:#b6a888;margin-bottom:16px}
+  .banner .bs b{color:var(--tan)}
+  .banner button{background:var(--gold);color:#0c0a12;border:none;border-radius:8px;padding:9px 22px;
+    font-family:'Cinzel',serif;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.04em}
+  .banner button:hover{background:var(--gold-hi)}
+
+  .tunebar{flex:0 0 auto;display:flex;align-items:center;gap:13px;padding:7px 18px;background:linear-gradient(#0d0a14,#0a0810);border-top:1px solid var(--edge);flex-wrap:wrap}
+  .tunebar .tb-lead{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .tunebar .sl{display:flex;align-items:center;gap:7px}
+  .tunebar .sl label{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);min-width:46px}
+  .tunebar .sl input[type=range]{width:86px;accent-color:var(--gold);cursor:pointer;height:3px}
+  .tunebar .sl .sv{font-size:10px;color:var(--cyan);font-weight:600;min-width:34px}
+  .tunebar .tb-reset{margin-left:auto;background:#140c10;border:1px solid var(--edge2);color:var(--dim);border-radius:5px;padding:4px 11px;font-family:inherit;font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer}
+  .tunebar .tb-reset:hover{border-color:var(--gold);color:var(--gold)}
+  .meta{position:fixed;bottom:3px;left:12px;font-size:7.5px;letter-spacing:.05em;color:#4a4458;pointer-events:none;line-height:1.5}
+  .meta b{color:#6a6480}
+  @media (prefers-reduced-motion:reduce){ .core svg{animation:none} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hud">
+    <div><div class="brand">THE CLICK</div><div class="ver">Age of Lenguages · v1.9</div></div>
+    <div class="stat score"><span class="sv" id="hScore">0</span><span class="sl">score</span></div>
+    <div class="stat combo"><span class="sv" id="hCombo">×1</span><span class="sl">combo</span></div>
+    <div class="stat acc"><span class="sv" id="hAcc">—</span><span class="sl">accuracy</span></div>
+    <div class="stat tempo"><span class="sv" id="hTempo">0</span><span class="sl">cmd/min</span></div>
+    <div class="hud-sp"></div>
+    <div class="integrity">
+      <div class="il"><span class="n">🇦🇷 your line</span><span id="hInt">100%</span></div>
+      <div class="itrack" id="itrack"><span id="hIntBar" style="width:100%"></span></div>
+    </div>
+  </div>
+
+  <div class="field" id="field">
+    <div class="midline"></div>
+    <div class="baseline es"></div>
+    <div class="baseline el"></div>
+    <div class="side-name es">Español</div>
+    <div class="side-name el">Ἑλληνικά</div>
+    <div class="core">
+      <svg width="230" height="230" viewBox="0 0 230 230" id="coreGon"></svg>
+      <div class="om">ἀγάπη</div>
+    </div>
+    <div class="comboBanner" id="comboBanner"></div>
+    <!-- units injected -->
+    <div class="banner" id="banner">
+      <div class="bx">
+        <div class="bt" id="bT">—</div>
+        <div class="bs" id="bS">—</div>
+        <button onclick="startGame()">Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt" id="prompt">
+    <div class="pr-idle" id="prIdle">Click one of <b>your units</b> (the pulsing ones) to command it — then pay the price: say the word in Greek. The enemy is marching. <b>Know the language or the line breaks.</b></div>
+  </div>
+  <div class="tunebar">
+    <span class="tb-lead">tune the feel ▸</span>
+    <div class="sl"><label>Spin</label><input id="sl-spin" type="range" min="0" max="100" value="55" oninput="setSpin(+this.value)"><span class="sv" id="sv-spin">55</span></div>
+    <div class="sl"><label>March</label><input id="sl-march" type="range" min="0" max="100" value="45" oninput="setMarch(+this.value)"><span class="sv" id="sv-march">2.9s</span></div>
+    <div class="sl"><label>Recall</label><input id="sl-recall" type="range" min="0" max="100" value="55" oninput="setRecall(+this.value)"><span class="sv" id="sv-recall">7.4s</span></div>
+    <div class="sl"><label>Scale</label><input id="sl-scale" type="range" min="40" max="80" value="52" oninput="setScale(+this.value)"><span class="sv" id="sv-scale">52</span></div>
+    <div class="sl"><label>Spread</label><input id="sl-spread" type="range" min="60" max="140" value="100" oninput="setSpread(+this.value)"><span class="sv" id="sv-spread">100%</span></div>
+    <div class="sl"><label>Choices</label><input id="sl-choices" type="range" min="2" max="4" step="1" value="4" oninput="setChoices(+this.value)"><span class="sv" id="sv-choices">4</span></div>
+    <button class="tb-reset" onclick="resetTune()">reset</button>
+  </div>
+</div>
+<div class="meta"><b>THE CLICK</b> · v1.9 — the click is the rep · Español vs Ἑλληνικά<br>click a unit → recall its Greek → it strikes · counters reward · you pay the price in recall</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  AGE OF LENGUAGES · v1.9 — THE CLICK
+// ════════════════════════════════════════════════════════════════════════
+
+// ── the tongue: Spanish (known) → Greek (target), recognised through the root ──
+// {es, el, rom, root, gloss}
+const LEX = [
+  {es:'madre',   el:'μητέρα',  rom:'mitéra',  root:'*méh₂tēr', gloss:'mother'},
+  {es:'padre',   el:'πατέρας', rom:'patéras', root:'*ph₂tḗr',  gloss:'father'},
+  {es:'hermano', el:'αδελφός', rom:'adelfós', root:'*bʰréh₂tēr',gloss:'brother'},
+  {es:'corazón', el:'καρδιά',  rom:'kardiá',  root:'*ḱērd',    gloss:'heart'},
+  {es:'pie',     el:'πόδι',    rom:'pódi',    root:'*pṓds',    gloss:'foot'},
+  {es:'diente',  el:'δόντι',   rom:'dónti',   root:'*h₃dónts', gloss:'tooth'},
+  {es:'noche',   el:'νύχτα',   rom:'nýchta',  root:'*nókʷts',  gloss:'night'},
+  {es:'sol',     el:'ήλιος',   rom:'ílios',   root:'*sóh₂wl̥',  gloss:'sun'},
+  {es:'estrella',el:'αστέρι',  rom:'astéri',  root:'*h₂stḗr',  gloss:'star'},
+  {es:'agua',    el:'νερό',    rom:'neró',    root:'*wódr̥',    gloss:'water'},
+  {es:'fuego',   el:'φωτιά',   rom:'fotiá',   root:'*péh₂wr̥',  gloss:'fire'},
+  {es:'nuevo',   el:'νέος',    rom:'néos',    root:'*néwos',   gloss:'new'},
+  {es:'nombre',  el:'όνομα',   rom:'ónoma',   root:'*h₁nómn̥',  gloss:'name'},
+  {es:'conocer', el:'γνωρίζω', rom:'gnorízo', root:'*ǵneh₃',   gloss:'know'},
+  {es:'dos',     el:'δύο',     rom:'dýo',     root:'*dwóh₁',   gloss:'two'},
+  {es:'tres',    el:'τρία',    rom:'tría',    root:'*tréyes',  gloss:'three'},
+  {es:'diez',    el:'δέκα',    rom:'déka',    root:'*déḱm̥',    gloss:'ten'},
+  {es:'estar',   el:'στέκομαι',rom:'stékome', root:'*steh₂',   gloss:'stand'},
+];
+
+// ── unit types: the counter triangle ──
+const TYPE = {
+  inf:{ ico:'🛡', label:'infantry', beats:'cav' },
+  arc:{ ico:'🏹', label:'archer',   beats:'inf', ranged:true },
+  cav:{ ico:'🐎', label:'cavalry',  beats:'arc' },
+};
+const TYPES=['inf','arc','cav'];
+
+// ── tuning: find what feels right for the monkey brain (the math always runs) ──
+const CONFIG = { spin:55, marchMs:2850, recallSec:7.4, scale:52, spread:1.0, nOpts:4 };
+function posFor(team,type,lane){
+  const g=0.11*CONFIG.spread, cg=0.095*CONFIG.spread;
+  const y=[0.5-g,0.5,0.5+g][lane];
+  const base=(team==='es')?0.31:0.69, dir=(team==='es')?-1:1;
+  const off={inf:0,arc:cg,cav:2*cg}[type];
+  return { x: base + dir*off, y };
+}
+function relayout(){ units.forEach(u=>{ const q=posFor(u.team,u.type,u.lane); u.fx=q.x; u.fy=q.y; u.el.style.left=(q.x*100)+'%'; u.el.style.top=(q.y*100)+'%'; }); }
+function applyConfig(){
+  const R=document.documentElement.style;
+  R.setProperty('--usz', CONFIG.scale+'px');
+  const spd=(1/95)+(CONFIG.spin/100)*((1/6)-(1/95));   // higher = spinnier
+  const core=1/spd, ring=core/13;
+  R.setProperty('--spin-core', core.toFixed(1)+'s');
+  R.setProperty('--spin-ring', ring.toFixed(2)+'s');
+}
+function setSpin(v){ CONFIG.spin=v; document.getElementById('sv-spin').textContent=v; applyConfig(); }
+function setMarch(v){ const sec=4.2-(v/100)*3.0; CONFIG.marchMs=sec*1000; document.getElementById('sv-march').textContent=sec.toFixed(1)+'s'; if(running){ clearInterval(marchTimer); marchTimer=setInterval(march,CONFIG.marchMs); } }
+function setRecall(v){ const sec=3+(v/100)*8; CONFIG.recallSec=sec; document.getElementById('sv-recall').textContent=sec.toFixed(1)+'s'; }
+function setScale(v){ CONFIG.scale=+v; document.getElementById('sv-scale').textContent=v; document.documentElement.style.setProperty('--usz', v+'px'); }
+function setSpread(v){ CONFIG.spread=v/100; document.getElementById('sv-spread').textContent=v+'%'; relayout(); }
+function setChoices(v){ CONFIG.nOpts=+v; document.getElementById('sv-choices').textContent=v; }
+function resetTune(){ const d={'sl-spin':55,'sl-march':45,'sl-recall':55,'sl-scale':52,'sl-spread':100,'sl-choices':4};
+  Object.keys(d).forEach(id=>{ const e=document.getElementById(id); if(e){ e.value=d[id]; e.dispatchEvent(new Event('input')); } }); }
+
+// ── state ──
+let units=[], sel=null, prompt=null, promptTimer=null, promptDeadline=0;
+let score=0, combo=0, correct=0, wrong=0, firstAnswerT=0, integrity=100, running=false, marchTimer=null;
+const field=()=>document.getElementById('field');
+
+function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+function fieldSize(){ const r=field().getBoundingClientRect(); return {w:r.width,h:r.height}; }
+
+// ── build the 12-gon core ──
+function buildCore(){
+  const svg=document.getElementById('coreGon'); const cx=115,cy=115,R=105; let d='';
+  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2-Math.PI/2; const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R; d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' '; }
+  d+='Z';
+  let inner=''; for(let i=0;i<12;i++){ const a=i/12*Math.PI*2-Math.PI/2; inner+=`<line x1="${cx}" y1="${cy}" x2="${(cx+Math.cos(a)*R).toFixed(1)}" y2="${(cy+Math.sin(a)*R).toFixed(1)}" stroke="#e8b84a" stroke-width="0.5"/>`; }
+  svg.innerHTML=`<path d="${d}" fill="none" stroke="#e8b84a" stroke-width="1"/>${inner}<circle cx="${cx}" cy="${cy}" r="${R*0.62}" fill="none" stroke="#e8b84a" stroke-width="0.6"/>`;
+}
+
+// ── formation: 3 lanes × 3 types, mirror-symmetric ──
+function spawn(){
+  units=[]; sel=null;
+  field().querySelectorAll('.unit').forEach(e=>e.remove());
+  const {w,h}=fieldSize();
+  let id=0;
+  [0,1,2].forEach(lane=>{
+    TYPES.forEach(t=>{
+      const pe=posFor('es',t,lane), pl=posFor('el',t,lane);
+      mk('es',t,pe.x,pe.y,lane,id++);
+      mk('el',t,pl.x,pl.y,lane,id++);
+    });
+  });
+  function mk(team,type,fx,fy,lane,uid){
+    const u={uid,team,type,lane,fx,fy,maxhp:team==='el'?60:100,hp:team==='el'?60:100,el:null,alive:true};
+    const div=document.createElement('div');
+    div.className='unit '+team+(team==='el'?' enemy':'');
+    div.style.left=(fx*100)+'%'; div.style.top=(fy*100)+'%';
+    div.innerHTML=`
+      <div class="ring"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="${team==='es'?'#7fff7f':'#e0a24a'}" stroke-width="1.4" stroke-dasharray="6 5"/><circle cx="30" cy="30" r="22" fill="none" stroke="${team==='es'?'#7fff7f':'#e0a24a'}" stroke-width="0.7" stroke-dasharray="2 6"/></svg></div>
+      <div class="ready"></div>
+      <div class="disc">${TYPE[type].ico}</div>
+      <div class="hpwrap"><div class="hp" style="width:100%"></div></div>`;
+    if(team==='es') div.onclick=()=>selectUnit(u);
+    field().appendChild(div);
+    u.el=div;
+    units.push(u);
+  }
+  refreshReady();
+}
+
+function myUnits(){ return units.filter(u=>u.team==='es'&&u.alive); }
+function enemies(){ return units.filter(u=>u.team==='el'&&u.alive); }
+function refreshReady(){ myUnits().forEach(u=>{ u.el.classList.toggle('ready-on', running && u!==sel); }); }
+
+// ── selection → prompt ──
+function selectUnit(u){
+  if(!running) return;
+  if(sel) sel.el.classList.remove('sel');
+  sel=u; u.el.classList.add('sel','pulse'); u.el.classList.remove('ready-on');
+  refreshReady();
+  askPrompt(u);
+}
+
+function askPrompt(u){
+  clearInterval(promptTimer);
+  const item=rnd(LEX);
+  // 3 distractors
+  const pool=LEX.filter(x=>x.el!==item.el); const opts=[item];
+  while(opts.length<CONFIG.nOpts){ const d=rnd(pool); if(!opts.includes(d)) opts.push(d); }
+  shuffle(opts);
+  prompt={u,item,opts};
+  renderPrompt();
+  const DUR=CONFIG.recallSec; promptDeadline=performance.now()+DUR*1000; firstAnswerT=performance.now();
+  const bar=document.getElementById('prBar');
+  promptTimer=setInterval(()=>{
+    const left=(promptDeadline-performance.now())/1000;
+    if(bar) bar.style.height=Math.max(0,left/DUR*100)+'%';
+    if(left<=0){ clearInterval(promptTimer); timeout(); }
+  },50);
+}
+
+function renderPrompt(){
+  const {u,item,opts}=prompt;
+  const p=document.getElementById('prompt');
+  p.innerHTML=`
+    <div class="pr-left">
+      <div class="pr-cmd"><span class="ci">${TYPE[u.type].ico}</span> command the ${TYPE[u.type].label} — say it in Greek</div>
+      <div class="pr-word">${item.es}</div>
+      <div class="pr-from">🇦🇷 español · root ${item.root} · “${item.gloss}”</div>
+    </div>
+    <div class="pr-timer"><span id="prBar" style="height:100%"></span></div>
+    <div class="pr-opts" id="prOpts"></div>`;
+  const oh=document.getElementById('prOpts');
+  opts.forEach(o=>{
+    const b=document.createElement('div'); b.className='opt';
+    b.innerHTML=`<span class="gk">${o.el}</span><span class="rm">${o.rom}</span>`;
+    b.onclick=()=>answer(o,b);
+    oh.appendChild(b);
+  });
+}
+
+function answer(choice,btn){
+  if(!prompt) return;
+  const {u,item}=prompt; const good=choice.el===item.el;
+  const dt=(performance.now()-firstAnswerT)/1000;
+  clearInterval(promptTimer);
+  if(good){
+    btn.classList.add('correct');
+    correct++; combo++;
+    const speed = dt<2.5?1 : dt<4?0.6 : 0.3;
+    strike(u, speed);
+    const gain=Math.round(100*combo*(0.6+speed));
+    score+=gain;
+    floatText('+'+gain, u, '#ffd76a');
+    if(combo>=3) showCombo(combo);
+    endPrompt();
+  } else {
+    btn.classList.add('wrong');
+    // reveal the correct
+    document.querySelectorAll('.opt').forEach(o=>{ if(o.querySelector('.gk').textContent===item.el) o.classList.add('correct'); });
+    wrong++; combo=0;
+    floatText('✗ '+item.el, u, '#f87171');
+    enemyGain(1);                 // hesitation lets them march
+    setTimeout(endPrompt,650);
+  }
+  updateHUD();
+}
+
+function timeout(){
+  if(!prompt) return;
+  const {u,item}=prompt;
+  document.querySelectorAll('.opt').forEach(o=>{ if(o.querySelector('.gk').textContent===item.el) o.classList.add('correct'); });
+  wrong++; combo=0; floatText('⧗ too slow', u, '#f87171'); enemyGain(1);
+  updateHUD(); setTimeout(endPrompt,700);
+}
+
+function endPrompt(){
+  if(sel){ sel.el.classList.remove('sel'); }
+  sel=null; prompt=null;
+  document.getElementById('prompt').innerHTML=`<div class="pr-idle" id="prIdle">Click the next <b>ready</b> unit. Faster + accurate = bigger combo. The line holds while you recall.</div>`;
+  refreshReady();
+  if(enemies().length===0){ win(); }
+}
+
+// ── strike: the reward. selected unit hits the most-advanced enemy ──
+function strike(u, speed){
+  const foe = mostAdvancedEnemy();
+  if(!foe) return;
+  u.el.classList.add('strike'); setTimeout(()=>u.el.classList.remove('strike'),300);
+  const counter = TYPE[u.type].beats===foe.type;
+  const dmg = Math.round((34 + speed*22) * (counter?1.6:1));
+  if(TYPE[u.type].ranged){ shootProj(u,foe); setTimeout(()=>hitFoe(foe,dmg,counter,u),260); }
+  else { lunge(u,foe); setTimeout(()=>hitFoe(foe,dmg,counter,u),160); }
+}
+function hitFoe(foe,dmg,counter,u){
+  if(!foe.alive) return;
+  foe.hp-=dmg; foe.el.classList.add('hit'); setTimeout(()=>foe.el.classList.remove('hit'),300);
+  foe.el.querySelector('.hp').style.width=Math.max(0,foe.hp/foe.maxhp*100)+'%';
+  if(counter) floatText('COUNTER!', foe, '#7fff7f');
+  if(foe.hp<=0){ foe.alive=false; foe.el.classList.add('dead'); if(enemies().length===0) win(); }
+}
+function lunge(u,foe){
+  const dx=(foe.fx-u.fx)*0.4;
+  u.el.style.left=((u.fx+dx)*100)+'%';
+  setTimeout(()=>{ u.el.style.left=(u.fx*100)+'%'; },260);
+}
+function shootProj(u,foe){
+  const {w,h}=fieldSize();
+  const p=document.createElement('div'); p.className='proj';
+  const x0=u.fx*w, y0=u.fy*h, x1=foe.fx*w, y1=foe.fy*h;
+  const ang=Math.atan2(y1-y0,x1-x0)*180/Math.PI;
+  p.style.left=x0+'px'; p.style.top=y0+'px'; p.style.transform=`translate(-50%,-50%) rotate(${ang}deg)`;
+  field().appendChild(p);
+  requestAnimationFrame(()=>{ p.style.transition='left .26s linear,top .26s linear'; p.style.left=x1+'px'; p.style.top=y1+'px'; });
+  setTimeout(()=>p.remove(),300);
+}
+function mostAdvancedEnemy(){ let best=null; enemies().forEach(e=>{ if(!best||e.fx<best.fx) best=e; }); return best; }
+
+// ── enemy march (the pressure/tiger) ──
+function march(){
+  if(!running) return;
+  enemies().forEach(e=>{ e.fx-=0.028; e.el.style.left=(e.fx*100)+'%';
+    if(e.fx<=0.08){ e.alive=false; e.el.classList.add('dead'); enemyGain(2); }
+  });
+  if(enemies().length===0) win();
+}
+function enemyGain(steps){
+  integrity=Math.max(0, integrity - steps*6);
+  updateHUD();
+  document.getElementById('itrack').classList.toggle('low', integrity<=30);
+  if(integrity<=0) lose();
+}
+
+// ── juice ──
+function floatText(t,u,col){
+  const {w,h}=fieldSize();
+  const f=document.createElement('div'); f.className='float'; f.textContent=t; f.style.color=col;
+  f.style.left=(u.fx*w)+'px'; f.style.top=(u.fy*h-14)+'px'; f.style.fontSize=(t[0]==='+'?18:14)+'px';
+  field().appendChild(f); setTimeout(()=>f.remove(),1100);
+}
+let comboT=null;
+function showCombo(c){
+  const b=document.getElementById('comboBanner'); b.textContent=c+'× COMBO';
+  b.style.opacity='1'; clearTimeout(comboT); comboT=setTimeout(()=>b.style.opacity='0',900);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+
+function updateHUD(){
+  document.getElementById('hScore').textContent=score;
+  document.getElementById('hCombo').textContent='×'+Math.max(1,combo);
+  const tot=correct+wrong;
+  document.getElementById('hAcc').textContent= tot? Math.round(correct/tot*100)+'%' : '—';
+  const mins=(performance.now()-gameStart)/60000;
+  document.getElementById('hTempo').textContent= mins>0.02? Math.round(tot/mins):0;
+  document.getElementById('hInt').textContent=integrity+'%';
+  document.getElementById('hIntBar').style.width=integrity+'%';
+}
+
+// ── win / lose ──
+let gameStart=0;
+function win(){ if(!running) return; ended('win'); }
+function lose(){ if(!running) return; ended('lose'); }
+function ended(kind){
+  running=false; clearInterval(promptTimer); clearInterval(marchTimer);
+  if(sel){ sel.el.classList.remove('sel'); sel=null; } prompt=null; refreshReady();
+  const tot=correct+wrong, acc=tot?Math.round(correct/tot*100):0;
+  const b=document.getElementById('banner'); b.className='banner show '+kind;
+  if(kind==='win'){
+    document.getElementById('bT').textContent='🏛️ THE LINE HOLDS';
+    document.getElementById('bS').innerHTML=`You out-recalled the phalanx. <b>${score}</b> score · <b>${acc}%</b> accuracy · <b>${correct}</b> words fielded.<br>Every click was a rep. The Greek is going in.`;
+  } else {
+    document.getElementById('bT').textContent='THE LINE BREAKS';
+    document.getElementById('bS').innerHTML=`The march reached you — the recall was too slow. <b>${score}</b> score · <b>${acc}%</b> accuracy.<br>Know the language, and the line holds. Again.`;
+  }
+}
+
+// ── boot ──
+function startGame(){
+  document.getElementById('banner').className='banner';
+  score=0; combo=0; correct=0; wrong=0; integrity=100; running=true;
+  gameStart=performance.now();
+  document.getElementById('itrack').classList.remove('low');
+  spawn(); updateHUD();
+  document.getElementById('prompt').innerHTML=`<div class="pr-idle" id="prIdle">Click a <b>pulsing unit</b> to command it — then click its Greek. The enemy marches every beat.</div>`;
+  clearInterval(marchTimer); marchTimer=setInterval(march, CONFIG.marchMs);
+}
+
+window.addEventListener('resize', ()=>{ units.forEach(u=>{ u.el.style.left=(u.fx*100)+'%'; u.el.style.top=(u.fy*100)+'%'; }); });
+buildCore();
+applyConfig();
+startGame();
+</script>
+</body>
+</html>

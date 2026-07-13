@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Age of Lenguages · High Ground v2.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+  AGE OF LENGUAGES · v2.1 — THE CLASH   (new v2 line: the battle)
+  ==========================================================================
+  First 3 unit types, Español vs Ελληνικά, resolving as graph force-chains.
+  Combat DNA absorbed from the cave:
+    · prey / pursue / muzzle+Ballistics / POUNCE ...... aracnium (swarm, pounce)
+    · counters as force-chains, verdict as honest outcome ...... bersha
+    · cost meter (you field only what you pay for), earnable badge ... apollonium / Path III
+  The counter triangle:  🛡 infantry ▶ 🐎 cavalry ▶ 🏹 archer ▶ 🛡 infantry
+  Honest frame: auto-battle (no live micro yet — that's v2.2). Motion is
+  opt-in (Path VIII): the field is still until you press CLASH. reduced-motion
+  honoured. The center is held, not shown (Path II): ἀγάπη. Frozen (Path X).
+-->
+<style>
+  :root{
+    --bg:#120e08; --bg2:#0b0805; --stone:#241b10;
+    --edge:#4a3820; --edge-lit:#6e5530; --bevel:#7a5f33;
+    --tan:#cbb994; --tan-dim:#8a7c5f;
+    --gold:#e8b84a; --gold-hi:#ffd76a;
+    --cyan:#6fc3e0; --pink:#e07ab0; --green:#8fbf6b; --alarm:#e2534b;
+    --es:#5fa8e6; --el:#e0a24a;            /* team colours: Español blue · Ελληνικά amber */
+    --es-dim:#2c4c68; --el-dim:#5a4622;
+    --food:#e2534b; --wood:#8fbf6b; --goldres:#e8b84a; --stone-res:#9fb3c4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:radial-gradient(120% 90% at 50% -8%, #1c1509 0%, var(--bg) 55%, var(--bg2) 100%);
+    color:var(--tan);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;overflow:hidden}
+  .app{height:100vh;display:flex;flex-direction:column}
+
+  /* header */
+  .hdr{flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:9px 18px;
+    background:linear-gradient(#2a2013,#1b140b);border-bottom:2px solid var(--edge);box-shadow:0 2px 0 #0a0704,inset 0 1px 0 #3d2f1a}
+  .hdr .brand{font-family:'Cinzel',serif;font-weight:800;font-size:16px;color:var(--gold);letter-spacing:.04em}
+  .hdr .ver{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--tan-dim)}
+  .matchup{display:flex;align-items:center;gap:10px;margin:0 auto}
+  .mu-side{display:flex;align-items:center;gap:7px}
+  .mu-side .fl{font-size:20px}
+  .mu-side .nm{font-family:'Cinzel',serif;font-weight:700;font-size:14px}
+  .mu-side.es .nm{color:var(--es)} .mu-side.el .nm{color:var(--el)}
+  .mu-vs{font-family:'Cinzel',serif;font-weight:700;color:var(--tan-dim);font-size:12px}
+  .phase{display:flex;align-items:center;gap:0;border:1px solid var(--edge);border-radius:6px;overflow:hidden}
+  .ph{padding:5px 13px;font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--tan-dim);border-right:1px solid var(--edge)}
+  .ph:last-child{border-right:none}
+  .ph.on{background:var(--gold);color:#120e08;font-weight:700}
+
+  .stage{flex:1 1 auto;display:flex;min-height:0}
+  /* rosters */
+  .roster{flex:0 0 auto;width:236px;display:flex;flex-direction:column;background:linear-gradient(#1a140c,#140f08);overflow-y:auto}
+  .roster.es{border-right:1px solid var(--edge)}
+  .roster.el{border-left:1px solid var(--edge)}
+  .r-hd{display:flex;align-items:center;gap:8px;padding:9px 12px 7px;position:sticky;top:0;background:#160f08;border-bottom:1px solid var(--edge);z-index:2}
+  .r-hd .rf{font-size:18px} .r-hd .rn{font-family:'Cinzel',serif;font-weight:700;font-size:13px}
+  .r-hd.es .rn{color:var(--es)} .r-hd.el .rn{color:var(--el)}
+  .r-hd .re{font-size:7px;letter-spacing:.05em;text-transform:uppercase;color:var(--tan-dim);margin-top:1px}
+  .ucard{margin:8px 10px;padding:8px 9px;background:linear-gradient(#2c2114,#1d1509);border:1px solid var(--edge);border-radius:7px}
+  .ucard.unique{border-color:var(--gold);box-shadow:inset 0 1px 0 #5a4620,0 0 12px rgba(232,184,74,.14)}
+  .uc-top{display:flex;align-items:center;gap:7px}
+  .uc-ico{font-size:17px;filter:drop-shadow(0 1px 1px #000)}
+  .uc-nm{font-family:'Cinzel',serif;font-weight:600;font-size:11.5px;color:var(--tan);line-height:1.1}
+  .uc-role{font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:var(--tan-dim)}
+  .ucard.unique .uc-nm{color:var(--gold-hi)}
+  .uc-real{font-size:8px;color:var(--tan-dim);font-style:italic;margin-top:3px;line-height:1.3}
+  .uc-stats{display:flex;gap:9px;margin-top:6px;font-size:8.5px}
+  .uc-stats .st{display:flex;flex-direction:column;align-items:center;gap:1px}
+  .uc-stats .st .sv{color:var(--cyan);font-weight:600} .uc-stats .st .sl{color:var(--tan-dim);font-size:6.5px;text-transform:uppercase;letter-spacing:.05em}
+  .uc-ctr{margin-top:5px;font-size:8px;line-height:1.4}
+  .uc-ctr .cg{color:var(--green)} .uc-ctr .cb{color:var(--alarm)}
+  .uc-buy{display:flex;align-items:center;gap:6px;margin-top:7px}
+  .qbtn{width:22px;height:22px;border:1px solid var(--edge-lit);background:#140c10;color:var(--tan);
+    border-radius:5px;font-family:inherit;font-size:13px;cursor:pointer;line-height:1;transition:all .12s}
+  .qbtn:hover{border-color:var(--gold);color:var(--gold-hi)}
+  .qcount{min-width:26px;text-align:center;font-size:14px;font-weight:600}
+  .es .qcount{color:var(--es)} .el .qcount{color:var(--el)}
+  .uc-cost{margin-left:auto;display:flex;gap:5px;font-size:7.5px;color:var(--cyan);align-items:center}
+  .uc-cost i{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:2px}
+
+  /* arena */
+  .arena-wrap{flex:1 1 auto;position:relative;min-width:0;display:flex;flex-direction:column}
+  .arena-top{position:absolute;top:8px;left:10px;right:10px;display:flex;gap:10px;pointer-events:none;z-index:3}
+  .hpbar{flex:1;background:rgba(11,9,7,.7);border:1px solid var(--edge);border-radius:6px;padding:5px 8px}
+  .hpbar .hl{display:flex;justify-content:space-between;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--tan-dim);margin-bottom:3px}
+  .hpbar .hl .n{font-family:'Cinzel',serif;font-weight:700} .hpbar.es .hl .n{color:var(--es)} .hpbar.el .hl .n{color:var(--el)}
+  .hptrack{height:7px;background:#1b140b;border-radius:3px;overflow:hidden;border:1px solid #0d0a06}
+  .hptrack>span{display:block;height:100%;transition:width .1s}
+  .hpbar.es .hptrack>span{background:var(--es)} .hpbar.el .hptrack>span{background:var(--el)}
+  .hpbar.el{direction:rtl}
+  canvas{display:block;width:100%;height:100%;background:
+    radial-gradient(120% 100% at 50% 20%, #14100a, #0b0805);border:none}
+  .arena-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#4c4132;pointer-events:none}
+
+  /* verdict overlay */
+  .verdict{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6;width:440px;max-width:90%;
+    background:rgba(11,9,7,.97);border:2px solid var(--edge);border-radius:12px;padding:18px 22px;text-align:center;
+    display:none;box-shadow:0 12px 44px rgba(0,0,0,.6)}
+  .verdict.show{display:block}
+  .verdict.es-win{border-color:var(--es)} .verdict.el-win{border-color:var(--el)} .verdict.draw{border-color:var(--tan-dim)}
+  .verdict .vt{font-family:'Cinzel',serif;font-weight:800;font-size:22px;letter-spacing:.03em;margin-bottom:4px}
+  .verdict.es-win .vt{color:var(--es)} .verdict.el-win .vt{color:var(--el)} .verdict.draw .vt{color:var(--tan)}
+  .verdict .vbadge{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 11px;border-radius:5px;margin-bottom:9px;
+    border:1px solid var(--lock-bd,#332b1f);color:var(--tan-dim)}
+  .verdict .vbadge.earned{background:var(--gold);color:#120e08;border-color:var(--gold);font-weight:700;box-shadow:0 0 14px rgba(232,184,74,.5)}
+  .verdict .vwhy{font-size:11px;line-height:1.55;color:#b6a888;margin-bottom:6px}
+  .verdict .vwhy b{color:var(--tan)}
+  .verdict .vchain{font-size:10px;color:var(--gold-hi);font-style:italic;margin-bottom:12px}
+  .verdict .vbtns{display:flex;gap:8px;justify-content:center}
+
+  /* control bar */
+  .ctrl{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:9px 16px;flex-wrap:wrap;
+    background:linear-gradient(#1c150c,#140f08);border-top:2px solid var(--edge);box-shadow:0 -2px 0 #0a0704,inset 0 1px 0 #3d2f1a}
+  .side-cost{display:flex;flex-direction:column;gap:2px;min-width:150px}
+  .side-cost .sc-h{font-family:'Cinzel',serif;font-weight:700;font-size:10px}
+  .side-cost.es .sc-h{color:var(--es)} .side-cost.el .sc-h{color:var(--el)}
+  .side-cost .sc-r{display:flex;gap:9px;font-size:8.5px;color:var(--cyan)}
+  .side-cost .sc-r i{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:2px}
+  .side-cost .sc-pop{font-size:8px;color:var(--tan-dim)}
+  .ctrl-mid{display:flex;align-items:center;gap:7px;margin:0 auto;flex-wrap:wrap}
+  .preset{background:#0c0c16;color:var(--tan-dim);border:1px solid var(--edge);border-radius:5px;
+    padding:5px 10px;font-family:inherit;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .12s}
+  .preset:hover{border-color:var(--cyan);color:var(--cyan)}
+  .clash{background:linear-gradient(var(--alarm),#b3392f);color:#fff;border:1px solid #ff6a5a;border-radius:6px;
+    padding:8px 22px;font-family:'Cinzel',serif;font-weight:800;font-size:14px;letter-spacing:.06em;cursor:pointer;
+    text-transform:uppercase;transition:all .15s;box-shadow:0 0 16px rgba(226,83,75,.3)}
+  .clash:hover{box-shadow:0 0 22px rgba(226,83,75,.55);transform:translateY(-1px)}
+  .clash.running{background:linear-gradient(#3a2d1a,#241b10);color:var(--tan-dim);border-color:var(--edge);box-shadow:none;cursor:default}
+  .resetb{background:#140c10;color:var(--tan-dim);border:1px solid var(--edge);border-radius:5px;padding:7px 13px;font-family:inherit;font-size:9px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer}
+  .resetb:hover{border-color:var(--gold);color:var(--gold)}
+
+  .meta{position:fixed;bottom:3px;left:12px;font-size:7.5px;letter-spacing:.05em;color:#4c4132;pointer-events:none;line-height:1.5}
+  .meta b{color:#6a5d43}
+  .roster::-webkit-scrollbar{width:8px}.roster::-webkit-scrollbar-thumb{background:#3a2d1a;border-radius:4px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div><div class="brand">THE CLASH</div><div class="ver">Age of Lenguages · v2.2 — High Ground</div></div>
+    <div class="matchup">
+      <div class="mu-side es"><span class="fl">🇦🇷</span><span class="nm">Español</span></div>
+      <span class="mu-vs">vs</span>
+      <div class="mu-side el"><span class="fl">🇬🇷</span><span class="nm">Ελληνικά</span></div>
+    </div>
+    <div class="phase" id="phase">
+      <span class="ph on" data-p="muster">Muster</span>
+      <span class="ph" data-p="battle">Battle</span>
+      <span class="ph" data-p="verdict">Verdict</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="roster es" id="rosterES"></div>
+
+    <div class="arena-wrap">
+      <div class="arena-top">
+        <div class="hpbar es"><div class="hl"><span class="n">Español</span><span id="hpES">—</span></div><div class="hptrack"><span id="hpESbar" style="width:100%"></span></div></div>
+        <div class="hpbar el"><div class="hl"><span class="n">Ελληνικά</span><span id="hpEL">—</span></div><div class="hptrack"><span id="hpELbar" style="width:100%"></span></div></div>
+      </div>
+      <canvas id="cv"></canvas>
+      <div class="arena-hint" id="hint">muster both armies below · then press CLASH</div>
+      <div class="verdict" id="verdict">
+        <div class="vt" id="vT">—</div>
+        <div class="vbadge" id="vBadge">—</div>
+        <div class="vwhy" id="vWhy">—</div>
+        <div class="vchain" id="vChain">—</div>
+        <div class="vbtns">
+          <button class="resetb" onclick="rematch()">Rematch (same armies)</button>
+          <button class="preset" onclick="toMuster()">Re-muster</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="roster el" id="rosterEL"></div>
+  </div>
+
+  <div class="ctrl">
+    <div class="side-cost es" id="costES"></div>
+    <div class="ctrl-mid">
+      <button class="preset" onclick="preset('mirror')">Mirror</button>
+      <button class="preset" onclick="preset('cav')">Cav rush</button>
+      <button class="preset" onclick="preset('archer')">Archer mass</button>
+      <button class="preset" onclick="preset('siege')">Siege line</button>
+      <button class="preset" onclick="preset('balanced')">Balanced</button>
+      <button class="clash" id="clashBtn" onclick="startBattle()">⚔ Clash</button>
+      <button class="resetb" onclick="clearAll()">Clear</button>
+    </div>
+    <div class="side-cost el" id="costEL"></div>
+  </div>
+</div>
+<div class="meta"><b>THE CLASH</b> · v2.2 — high ground · siege · friendly fire<br>elevation ±25% (AoE2-exact) · blast hits your own crowded lines · min-1 damage, bonus ignores armor<br>live micro → v2.3</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  AGE OF LENGUAGES · v2.1 — THE CLASH
+//  The counter triangle:  🛡 infantry ▶ 🐎 cavalry ▶ 🏹 archer ▶ 🛡 infantry
+// ════════════════════════════════════════════════════════════════════════
+
+// role archetypes (px-space; speed px/s; ranges px; cd seconds)
+const ROLE = {
+  inf:{ ico:'🛡', role:'inf', label:'Infantry', from:'Phonology',
+        hp:46, atk:6, armor:1, range:20, speed:44, cd:0.72, radius:9,
+        bonusVs:'cav', bonus:9, ranged:false,
+        strong:'cavalry (breaks the charge)', weak:'archers (melts to arrows)' },
+  arc:{ ico:'🏹', role:'arc', label:'Archer', from:'Lexicon',
+        hp:28, atk:5, armor:0, range:150, speed:40, cd:1.0, radius:8,
+        bonusVs:'inf', bonus:5, ranged:true,
+        strong:'infantry (kites and melts it)', weak:'cavalry (run down in seconds)' },
+  cav:{ ico:'🐎', role:'cav', label:'Cavalry', from:'Syntax',
+        hp:80, atk:10, armor:2, range:24, speed:76, cd:0.9, radius:10,
+        bonusVs:'arc', bonus:7, ranged:false, charge:true,
+        strong:'archers (pounces through them)', weak:'infantry (bogs on the spear-wall)' },
+  sie:{ ico:'🪨', role:'sie', label:'Siege', from:'Morphology',
+        hp:55, atk:11, armor:1, range:135, speed:24, cd:2.6, radius:11,
+        bonusVs:'inf', bonus:6, ranged:true, blast:30,
+        strong:'clumped foot (one ending shatters a whole word-class)', weak:'cavalry (run down before reload) · AND its own crowded lines (friendly fire)' },
+};
+
+// the two civs, each fielding the 3 roles with identity modifiers
+const CIVS = {
+  es:{ key:'es', flag:'🇦🇷', name:'Español', epithet:'the cavalry civ', color:'var(--es)', rgb:'#5fa8e6',
+    units:{
+      inf:{ name:'Sílaba',  real:'the syllable phalanx — phonetic, drilled fast', mod:{speed:+8, cost:{t:-3}} },
+      arc:{ name:'Cognado', real:'the Romance cognate archer — cheap, free hits across the family', mod:{cost:{t:-2,r:-3}} },
+      cav:{ name:'El Voseo',real:'★ the Rioplatense heavy cavalry — this civ IS the cavalry civ', unique:true, mod:{hp:+18, atk:+2} },
+      sie:{ name:'Conjugación', real:'the verb-paradigm siege — hablo·hablas·habla grinds a whole class at once', mod:{} },
+    }},
+  el:{ key:'el', flag:'🇬🇷', name:'Ελληνικά', epithet:'the keystone civ', color:'var(--el)', rgb:'#e0a24a',
+    units:{
+      inf:{ name:'Φώνημα',  real:'the phoneme line — the raw sound frontline', mod:{} },
+      arc:{ name:'Ῥίζα',    real:'the root archer — Greek reaches every technical word (keystone range)', mod:{range:+42, hp:+4} },
+      cav:{ name:'Σύνταξις',real:'the word-order cavalry — clauses that carry the charge', mod:{} },
+      sie:{ name:'Πτῶσις', real:'the declension mangonel — one case-ending shatters a whole word-class (Greek\'s rich morphology: +blast)', mod:{blast:+8} },
+    }},
+};
+
+const BASE_COST = { inf:{t:14,r:8,i:0,g:4}, arc:{t:16,r:16,i:2,g:3}, cav:{t:22,r:10,i:4,g:6}, sie:{t:20,r:14,i:2,g:10} };
+const RES = [ {k:'t',c:'var(--food)',l:'Time'},{k:'r',c:'var(--wood)',l:'Reps'},{k:'i',c:'var(--goldres)',l:'Imm'},{k:'g',c:'var(--stone-res)',l:'Gram'} ];
+
+// resolve a civ's unit into concrete stats
+function statOf(civKey, role){
+  const base=ROLE[role], u=CIVS[civKey].units[role], m=u.mod||{};
+  const s={...base, name:u.name, real:u.real, unique:!!u.unique, civ:civKey};
+  ['hp','atk','armor','range','speed','cd','bonus','blast'].forEach(k=>{ if(m[k]!=null) s[k]=base[k]+m[k]; });
+  const cost={...BASE_COST[role]}; if(m.cost) Object.keys(m.cost).forEach(k=>cost[k]=Math.max(0,cost[k]+m.cost[k]));
+  s.cost=cost; return s;
+}
+
+const ROLES=['inf','arc','cav','sie'];
+// elevation: a central HIGH GROUND. Faithful AoE2 value: +25% downhill / -25% uphill.
+const ELEV_UP=1.25, ELEV_DOWN=0.75;
+let hill={cx:0,cy:0,rx:0,ry:0};
+function computeHill(){ hill={cx:W*0.5, cy:H*0.5, rx:Math.min(W*0.16,150), ry:Math.min(H*0.27,150)}; }
+function onHill(x,y){ if(!hill.rx)return 0; const dx=(x-hill.cx)/hill.rx, dy=(y-hill.cy)/hill.ry; return (dx*dx+dy*dy)<=1?1:0; }
+// ── muster state ──
+let counts={ es:{inf:0,arc:0,cav:0,sie:0}, el:{inf:0,arc:0,cav:0,sie:0} };
+let phase='muster';
+
+// ════════════════════════════════════════════════════════════════════════
+//  ROSTER UI
+// ════════════════════════════════════════════════════════════════════════
+function renderRosters(){
+  ['es','el'].forEach(ck=>{
+    const civ=CIVS[ck], host=document.getElementById('roster'+ck.toUpperCase());
+    let html=`<div class="r-hd ${ck}"><span class="rf">${civ.flag}</span><div><div class="rn">${civ.name}</div><div class="re">${civ.epithet}</div></div></div>`;
+    ROLES.forEach(role=>{
+      const s=statOf(ck,role), c=counts[ck][role];
+      html+=`<div class="ucard ${s.unique?'unique':''}">
+        <div class="uc-top"><span class="uc-ico">${s.ico}</span>
+          <div><div class="uc-nm">${s.name}</div><div class="uc-role">${ROLE[role].label} · ${s.from}${s.ranged?' · ranged':''}</div></div></div>
+        <div class="uc-real">${s.real}</div>
+        <div class="uc-stats">
+          <div class="st"><span class="sv">${s.hp}</span><span class="sl">hp</span></div>
+          <div class="st"><span class="sv">${s.atk}</span><span class="sl">atk</span></div>
+          <div class="st"><span class="sv">${s.armor}</span><span class="sl">arm</span></div>
+          <div class="st"><span class="sv">${s.ranged?Math.round(s.range):'∙'}</span><span class="sl">rng</span></div>
+          <div class="st"><span class="sv">${s.speed}</span><span class="sl">spd</span></div>
+        </div>
+        <div class="uc-ctr"><span class="cg">▲ ${s.strong}</span><br><span class="cb">▼ ${s.weak}</span></div>
+        <div class="uc-buy">
+          <button class="qbtn" onclick="adj('${ck}','${role}',-1)">−</button>
+          <span class="qcount">${c}</span>
+          <button class="qbtn" onclick="adj('${ck}','${role}',1)">+</button>
+          <span class="uc-cost">${RES.filter(r=>s.cost[r.k]).map(r=>`<span><i style="background:${r.c}"></i>${s.cost[r.k]}</span>`).join('')}</span>
+        </div>
+      </div>`;
+    });
+    host.innerHTML=html;
+  });
+  renderCosts();
+}
+function adj(ck,role,d){ if(phase==='battle')return; counts[ck][role]=Math.max(0,Math.min(30,counts[ck][role]+d)); renderRosters(); }
+
+function sideTotals(ck){
+  const t={t:0,r:0,i:0,g:0}; let pop=0;
+  ROLES.forEach(role=>{ const s=statOf(ck,role), n=counts[ck][role]; pop+=n;
+    RES.forEach(r=>t[r.k]+=s.cost[r.k]*n); });
+  return {t,pop};
+}
+function renderCosts(){
+  ['es','el'].forEach(ck=>{
+    const {t,pop}=sideTotals(ck), civ=CIVS[ck];
+    document.getElementById('cost'+ck.toUpperCase()).innerHTML=
+      `<span class="sc-h">${civ.flag} ${civ.name}</span>
+       <span class="sc-r">${RES.map(r=>`<span><i style="background:${r.c}"></i>${t[r.k]}</span>`).join('')}</span>
+       <span class="sc-pop">${pop} units mustered</span>`;
+  });
+}
+
+// presets
+function preset(kind){
+  if(phase==='battle')return;
+  const set=(es,el)=>{ counts.es={inf:es[0],arc:es[1],cav:es[2],sie:es[3]||0}; counts.el={inf:el[0],arc:el[1],cav:el[2],sie:el[3]||0}; };
+  if(kind==='mirror')   set([6,6,3,1],[6,6,3,1]);
+  if(kind==='cav')      set([2,2,8,0],[6,6,2,1]);      // Español leans on its elite cavalry
+  if(kind==='archer')   set([4,10,1,0],[4,10,1,0]);    // archer mass — Greek range should tell
+  if(kind==='siege')    set([6,3,2,3],[6,3,2,3]);      // siege line — mind the friendly fire
+  if(kind==='balanced') set([6,6,4,1],[6,6,4,1]);
+  renderRosters();
+}
+function clearAll(){ if(phase==='battle')return; counts={es:{inf:0,arc:0,cav:0,sie:0},el:{inf:0,arc:0,cav:0,sie:0}}; renderRosters(); }
+
+// ════════════════════════════════════════════════════════════════════════
+//  BATTLE  (top-down 2D; prey → pursue → muzzle/pounce; bonus = counter)
+// ════════════════════════════════════════════════════════════════════════
+const cv=document.getElementById('cv'); const ctx=cv.getContext('2d');
+let W=0,H=0,dpr=1;
+function resize(){ const r=cv.getBoundingClientRect(); dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=r.width*dpr; cv.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; computeHill(); }
+window.addEventListener('resize',()=>{ resize(); if(phase!=='battle') drawIdle(); });
+
+let units=[], projs=[], raf=null, t0=0, dmgMatrix={}, startHP={es:0,el:0}, blastFx=[], elevTally={}, ffTally={};
+
+function spawnArmies(){
+  units=[]; projs=[]; dmgMatrix={}; blastFx=[]; elevTally={}; ffTally={}; computeHill();
+  const spawn=(ck, xMin,xMax, faceSign)=>{
+    let idx=0;
+    ROLES.forEach(role=>{
+      const s=statOf(ck,role);
+      for(let i=0;i<counts[ck][role];i++){
+        // grid-ish column packing on each side
+        const col=Math.floor(idx/9), row=idx%9;
+        const x = faceSign>0 ? (xMin + col*26) : (xMax - col*26);
+        const y = H*0.14 + row*((H*0.72)/9) + (Math.random()*8-4);
+        units.push({ id:units.length, ck, role, x, y, hp:s.hp, maxhp:s.hp, s, cd:Math.random()*s.cd, tid:-1, face:faceSign, flash:0, lunge:0 });
+        idx++;
+      }
+    });
+  };
+  spawn('es', 40, W*0.30, +1);
+  spawn('el', W*0.70, W-40, -1);
+  startHP.es=units.filter(u=>u.ck==='es').reduce((a,b)=>a+b.maxhp,0)||1;
+  startHP.el=units.filter(u=>u.ck==='el').reduce((a,b)=>a+b.maxhp,0)||1;
+}
+
+function nearestEnemy(u){
+  let best=null,bd=1e9;
+  for(const e of units){ if(e.hp<=0||e.ck===u.ck)continue; const dx=e.x-u.x,dy=e.y-u.y,d=dx*dx+dy*dy; if(d<bd){bd=d;best=e;} }
+  return best;
+}
+function sideHP(ck){ return units.filter(u=>u.ck===ck&&u.hp>0).reduce((a,b)=>a+b.hp,0); }
+function sideCount(ck){ return units.filter(u=>u.ck===ck&&u.hp>0).length; }
+
+function step(dt){
+  // acquire + move + attack
+  for(const u of units){
+    if(u.hp<=0) continue;
+    u.flash=Math.max(0,u.flash-dt*4); u.lunge=Math.max(0,u.lunge-dt*6);
+    let tgt = units[u.tid];
+    if(!tgt || tgt.hp<=0 || tgt.ck===u.ck){ tgt=nearestEnemy(u); u.tid=tgt?tgt.id:-1; }
+    if(!tgt) continue;
+    const dx=tgt.x-u.x, dy=tgt.y-u.y, dist=Math.hypot(dx,dy)||1e-6;
+    const reach=u.s.range + (u.s.ranged?0:tgt.s.radius);
+    u.cd-=dt;
+    if(dist<=reach){
+      if(u.cd<=0){
+        u.cd=u.s.cd;
+        if(u.s.ranged){ // muzzle + (light) ballistics lead
+          const lead=6, isSie=u.role==='sie';
+          projs.push({x:u.x,y:u.y, tid:tgt.id, ck:u.ck, dmg:u.s.atk, bvs:u.s.bonusVs, bonus:u.s.bonus,
+            spd:isSie?150:230, blast:u.s.blast||0, felev:onHill(u.x,u.y),
+            tx:tgt.x+ (Math.random()*lead-lead/2), ty:tgt.y+(Math.random()*lead-lead/2) });
+        } else { // melee / pounce
+          applyHit(u,tgt); u.flash=1; if(u.s.charge){ u.lunge=1; }
+        }
+      }
+      // ranged: KITE — hold standoff, back off if the enemy gets inside half-range
+      if(u.s.ranged && u.role!=='sie'){ if(dist < u.s.range*0.82){ u.x-=dx/dist*u.s.speed*dt*0.7; u.y-=dy/dist*u.s.speed*dt*0.7; } }
+      else { u.x+=dx/dist*u.s.speed*dt*0.25; u.y+=dy/dist*u.s.speed*dt*0.25; }
+    } else {
+      // pursue (with light swarm separation)
+      let sx=0,sy=0;
+      for(const o of units){ if(o===u||o.hp<=0)continue; const ox=u.x-o.x,oy=u.y-o.y,od=ox*ox+oy*oy;
+        if(od<(u.s.radius+o.s.radius)*(u.s.radius+o.s.radius)){ const d=Math.sqrt(od)||1; sx+=ox/d; sy+=oy/d; } }
+      const vx=dx/dist + sx*0.6, vy=dy/dist + sy*0.6, vl=Math.hypot(vx,vy)||1;
+      u.x+=vx/vl*u.s.speed*dt; u.y+=vy/vl*u.s.speed*dt;
+    }
+    u.x=Math.max(14,Math.min(W-14,u.x)); u.y=Math.max(14,Math.min(H-14,u.y));
+  }
+  // projectiles
+  for(const p of projs){
+    if(p.dead) continue;
+    const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
+    if(d<6){ p.dead=true; if(p.blast>0){ blastAt(p); } else { const tgt=units[p.tid]; if(tgt&&tgt.hp>0){ applyHitProj(p,tgt); tgt.flash=1; } } continue; }
+    p.x+=dx/d*p.spd*dt; p.y+=dy/d*p.spd*dt;
+  }
+  projs=projs.filter(p=>!p.dead);
+  for(const f of blastFx) f.t-=dt*2.4; blastFx=blastFx.filter(f=>f.t>0);
+}
+
+function elevMul(fromE,toE){ return fromE>toE?ELEV_UP : fromE<toE?ELEV_DOWN : 1; }
+function applyHit(u,tgt){
+  const bonus = (u.s.bonusVs===tgt.role)? u.s.bonus : 0;
+  const charge = (u.s.charge && u.lunge<=0)? 3 : 0; // small first-contact charge kick
+  let dmg=Math.max(1, u.s.atk + bonus + charge - tgt.s.armor);       // min-1 floor, bonus NOT reduced by armor
+  const ue=onHill(u.x,u.y), te=onHill(tgt.x,tgt.y); dmg*=elevMul(ue,te);
+  if(ue>te) elevTally[u.ck]=(elevTally[u.ck]||0)+dmg*0.2;
+  tgt.hp-=dmg; logDmg(u.ck,u.role,tgt.role,dmg);
+}
+function applyHitProj(p,tgt){
+  const bonus=(p.bvs===tgt.role)? p.bonus:0;
+  let dmg=Math.max(1, p.dmg + bonus - tgt.s.armor);
+  dmg*=elevMul(p.felev, onHill(tgt.x,tgt.y));
+  tgt.hp-=dmg; logDmg(p.ck,'arc',tgt.role,dmg);
+}
+function logDmg(ck,ar,tr,dmg){ const k=ck+':'+ar+'>'+tr; dmgMatrix[k]=(dmgMatrix[k]||0)+dmg; }
+function blastAt(p){
+  blastFx.push({x:p.tx,y:p.ty,r:p.blast,t:1});
+  for(const u of units){ if(u.hp<=0) continue;
+    const dd=Math.hypot(u.x-p.tx,u.y-p.ty); if(dd>p.blast) continue;
+    const fall=1-0.5*(dd/p.blast);                       // 100% centre -> 50% edge
+    const bonus=(p.bvs===u.role)?p.bonus:0;
+    let dmg=Math.max(1,(p.dmg+bonus-u.s.armor))*fall;
+    dmg*=elevMul(p.felev, onHill(u.x,u.y));
+    u.hp-=dmg; u.flash=1; logDmg(p.ck,'sie',u.role,dmg);
+    if(u.ck===p.ck) ffTally[p.ck]=(ffTally[p.ck]||0)+dmg;  // FRIENDLY FIRE: blast attack lvl >= own blast defense
+  }
+}
+function drawHill(){
+  if(!hill.rx) return; ctx.save();
+  ctx.beginPath(); ctx.ellipse(hill.cx,hill.cy,hill.rx,hill.ry,0,0,7);
+  ctx.fillStyle='rgba(120,150,90,0.055)'; ctx.fill();
+  ctx.strokeStyle='rgba(150,180,110,0.26)'; ctx.setLineDash([4,5]); ctx.lineWidth=1.5; ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.ellipse(hill.cx,hill.cy,hill.rx*0.62,hill.ry*0.62,0,0,7);
+  ctx.strokeStyle='rgba(150,180,110,0.16)'; ctx.stroke();
+  ctx.fillStyle='rgba(160,190,120,0.55)'; ctx.font="9px 'IBM Plex Mono',monospace"; ctx.textAlign='center';
+  ctx.fillText('⛰ HIGH GROUND · +25%', hill.cx, hill.cy-hill.ry-7); ctx.restore();
+}
+
+// ── render ──
+function drawIdle(){ resize(); ctx.clearRect(0,0,W,H); drawCenterMark(); drawHill(); drawMusterGhost(); }
+function drawCenterMark(){ // Path II — held, quiet
+  ctx.save(); ctx.globalAlpha=0.10; ctx.fillStyle='#e8b84a'; ctx.textAlign='center';
+  ctx.font="26px 'Cinzel', serif"; ctx.fillText('ἀγάπη', W/2, H/2);
+  ctx.font="8px 'IBM Plex Mono', monospace"; ctx.globalAlpha=0.14; ctx.fillStyle='#8a7c5f';
+  ctx.fillText('THE CENTRE · HELD, NOT SHOWN', W/2, H/2+16); ctx.restore();
+}
+function drawMusterGhost(){
+  ctx.save(); ctx.globalAlpha=0.5; ctx.textAlign='center';
+  ['es','el'].forEach(ck=>{
+    const xc = ck==='es'? W*0.16 : W*0.84;
+    ctx.fillStyle=CIVS[ck].rgb; ctx.font="11px 'Cinzel',serif";
+    ctx.fillText(CIVS[ck].flag+' '+sideTotals(ck).pop+' units', xc, H-24);
+  });
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H); drawCenterMark(); drawHill();
+  // projectiles
+  for(const p of projs){ ctx.strokeStyle=CIVS[p.ck].rgb; ctx.globalAlpha=.8; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x-(p.tx-p.x)*0.04,p.y-(p.ty-p.y)*0.04); ctx.stroke(); ctx.globalAlpha=1; }
+  // units
+  for(const u of units){
+    if(u.hp<=0) continue;
+    const col=CIVS[u.ck].rgb;
+    // lunge offset (pounce) for cavalry mid-strike
+    let ox=0,oy=0; if(u.lunge>0&&u.tid>=0&&units[u.tid]){ const tgt=units[u.tid]; const dx=tgt.x-u.x,dy=tgt.y-u.y,d=Math.hypot(dx,dy)||1; ox=dx/d*u.lunge*5; oy=dy/d*u.lunge*5; }
+    const x=u.x+ox, y=u.y+oy, r=u.s.radius;
+    // body disc
+    ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle=col;
+    ctx.globalAlpha= u.role==='arc'?0.85:1; ctx.fill(); ctx.globalAlpha=1;
+    // flash on hit
+    if(u.flash>0){ ctx.beginPath(); ctx.arc(x,y,r+2,0,7); ctx.strokeStyle='rgba(255,240,220,'+u.flash+')'; ctx.lineWidth=2; ctx.stroke(); }
+    // role glyph
+    ctx.fillStyle='rgba(10,8,5,.9)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font=(r+2)+"px serif"; ctx.fillText(u.s.ico, x, y+1);
+    // unique ring
+    if(u.s.unique){ ctx.beginPath(); ctx.arc(x,y,r+3,0,7); ctx.strokeStyle='rgba(232,184,74,.7)'; ctx.lineWidth=1.4; ctx.stroke(); }
+    // hp bar
+    const w=r*2, hp=Math.max(0,u.hp/u.maxhp);
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(x-r,y-r-6,w,3);
+    ctx.fillStyle= hp>0.5?'#8fbf6b':hp>0.25?'#e8b84a':'#e2534b'; ctx.fillRect(x-r,y-r-6,w*hp,3);
+  }
+  for(const f of blastFx){ ctx.beginPath(); ctx.arc(f.x,f.y,f.r*(1.25-f.t*0.25),0,7);
+    ctx.strokeStyle='rgba(226,83,75,'+f.t.toFixed(2)+')'; ctx.lineWidth=2; ctx.stroke(); }
+  ctx.textBaseline='alphabetic';
+}
+
+function loop(now){
+  let dt=(now-t0)/1000; t0=now; dt=Math.min(0.05,dt);
+  step(dt); draw(); updateHP();
+  const ec=sideCount('es'), gc=sideCount('el');
+  if(ec===0||gc===0){ endBattle(); return; }
+  if((now-battleStart)/1000>70){ endBattle(true); return; }
+  raf=requestAnimationFrame(loop);
+}
+
+let battleStart=0;
+function updateHP(){
+  const eh=sideHP('es'), gh=sideHP('el');
+  document.getElementById('hpES').textContent=Math.round(eh)+' hp · '+sideCount('es');
+  document.getElementById('hpEL').textContent=Math.round(gh)+' hp · '+sideCount('el');
+  document.getElementById('hpESbar').style.width=(eh/startHP.es*100)+'%';
+  document.getElementById('hpELbar').style.width=(gh/startHP.el*100)+'%';
+}
+
+// ── phase control ──
+function setPhase(p){ phase=p; document.querySelectorAll('.phase .ph').forEach(el=>el.classList.toggle('on',el.dataset.p===p)); }
+
+function startBattle(){
+  if(phase==='battle')return;
+  if(sideTotals('es').pop===0||sideTotals('el').pop===0){
+    document.getElementById('hint').textContent='both sides need at least one unit — muster them below';
+    return;
+  }
+  document.getElementById('verdict').classList.remove('show');
+  setPhase('battle'); resize(); spawnArmies();
+  document.getElementById('clashBtn').classList.add('running'); document.getElementById('clashBtn').textContent='⚔ clashing…';
+  document.getElementById('hint').textContent='force-chains resolving…';
+  battleStart=performance.now(); t0=performance.now(); raf=requestAnimationFrame(loop);
+}
+function endBattle(timeout){
+  if(raf) cancelAnimationFrame(raf); raf=null;
+  draw(); updateHP(); setPhase('verdict');
+  document.getElementById('clashBtn').classList.remove('running'); document.getElementById('clashBtn').textContent='⚔ Clash';
+  showVerdict(timeout);
+}
+function rematch(){ setPhase('muster'); startBattle(); }
+function toMuster(){ if(raf)cancelAnimationFrame(raf); raf=null; setPhase('muster');
+  document.getElementById('verdict').classList.remove('show'); document.getElementById('hint').textContent='muster both armies below · then press CLASH'; drawIdle(); }
+
+// ── verdict: name the decisive force-chain (the teaching moment) ──
+const ROLEWORD={inf:'infantry',arc:'archers',cav:'cavalry'};
+const CHAIN_FLAVOR={
+  'cav>arc':'the cavalry pounced clean through the archer line',
+  'arc>inf':'the archers kited and melted the infantry',
+  'inf>cav':'the syllable spear-wall broke the cavalry charge',
+  'cav>inf':'the cavalry ground against the spear-wall (and paid for it)',
+  'inf>arc':'the infantry ate arrows crossing the field',
+  'arc>cav':'the archers peppered the cavalry (rarely enough)',
+  'inf>inf':'the infantry lines attritioned each other',
+  'arc>arc':'the archers traded volleys',
+  'cav>cav':'the cavalry wings collided',
+};
+function showVerdict(timeout){
+  const eh=sideHP('es'), gh=sideHP('el'), v=document.getElementById('verdict');
+  let winner=null;
+  if(sideCount('es')>0 && sideCount('el')===0) winner='es';
+  else if(sideCount('el')>0 && sideCount('es')===0) winner='el';
+  else winner = eh>gh? 'es' : gh>eh? 'el' : null;
+
+  // decisive chain = winner's biggest damage matrix entry
+  let bestK=null,bestV=0;
+  Object.keys(dmgMatrix).forEach(k=>{ if(winner && k.startsWith(winner+':') && dmgMatrix[k]>bestV){bestV=dmgMatrix[k];bestK=k;} });
+  const chainKey = bestK? bestK.split(':')[1] : null;
+  const chainTxt = chainKey? (CHAIN_FLAVOR[chainKey]||chainKey) : 'a war of attrition';
+
+  v.className='verdict show '+(winner? winner+'-win':'draw');
+  if(!winner){
+    document.getElementById('vT').textContent='STALEMATE';
+    document.getElementById('vBadge').className='vbadge'; document.getElementById('vBadge').textContent='no ground taken';
+    document.getElementById('vWhy').innerHTML='Both armies bled out to nothing, or held even. A mixed field with no decisive counter — the force-chains cancelled.';
+    document.getElementById('vChain').textContent='— the graph reached equilibrium —';
+    return;
+  }
+  const civ=CIVS[winner], loser=winner==='es'?'el':'es';
+  const survHP = winner==='es'? eh:gh, survPct = survHP/startHP[winner];
+  const survN=sideCount(winner);
+  document.getElementById('vT').textContent=civ.flag+'  '+civ.name.toUpperCase()+' HOLDS THE FIELD';
+  // earnable badge — decisive if you kept most of your force
+  const bEl=document.getElementById('vBadge');
+  if(survPct>0.45){ bEl.className='vbadge earned'; bEl.textContent='✓ decisive victory'; }
+  else if(timeout){ bEl.className='vbadge'; bEl.textContent='timeout — held on hp'; }
+  else{ bEl.className='vbadge'; bEl.textContent='pyrrhic — barely'; }
+
+  document.getElementById('vWhy').innerHTML=
+    `<b>${survN} units</b> survive (${Math.round(survPct*100)}% of mustered strength). `+
+    `The result is the counter triangle, not luck: <b>🛡▶🐎▶🏹▶🛡</b>. `+
+    (winner==='es' && chainKey==='cav>arc' ? `Español leaned on <b>El Voseo</b> — the elite cavalry it\'s built for.` :
+     winner==='el' && chainKey==='arc>inf' ? `Ελληνικά\'s <b>Ῥίζα</b> archers used their keystone range to melt the line before it closed.` :
+     `${CIVS[loser].name} fielded the wrong answer to what ${civ.name} brought.`);
+  let doc='decisive force-chain: “'+chainTxt+'”';
+  const ff=Math.round(ffTally[winner]||0), ev=Math.round(elevTally[winner]||0);
+  if(ff>25) doc+='  ·  own siege blast cost '+ff+' friendly hp — space your lines';
+  else if(ev>18) doc+='  ·  the high ground (+25%) told';
+  document.getElementById('vChain').textContent=doc;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+renderRosters();
+preset('balanced');
+resize(); drawIdle();
+window.addEventListener('load', ()=>{ resize(); if(phase==='muster') drawIdle(); });
+</script>
+</body>
+</html>

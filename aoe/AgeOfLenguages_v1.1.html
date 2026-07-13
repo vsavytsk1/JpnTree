@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Age of Lenguages · Tech Tree v1.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#120e08; --bg2:#0b0805;
+    --stone:#241b10; --stone2:#2f2415;
+    --edge:#4a3820; --edge-lit:#6e5530; --bevel:#7a5f33;
+    --tan:#cbb994; --tan-dim:#8a7c5f;
+    --gold:#e8b84a; --gold-hi:#ffd76a;
+    --lock-bg:#221d16; --lock-tx:#5c5343; --lock-bd:#332b1f;
+    --a1:#8f8261; --a2:#c88a34; --a3:#b0563a; --a4:#caa23a;
+    --food:#e2534b; --wood:#8fbf6b; --goldres:#e8b84a; --stone-res:#9fb3c4;
+    --good:#8fbf6b; --bad:#e2534b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%, #1c1509 0%, var(--bg) 55%, var(--bg2) 100%);
+    color:var(--tan); font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; overflow:hidden;
+  }
+  .app{height:100vh;display:flex;flex-direction:column}
+
+  /* ── TOP BAR ── */
+  .topbar{flex:0 0 auto;display:flex;align-items:stretch;
+    background:linear-gradient(#2a2013,#1b140b);border-bottom:2px solid var(--edge);
+    box-shadow:0 2px 0 #0a0704, inset 0 1px 0 #3d2f1a}
+  .res{display:flex;align-items:center;gap:16px;padding:8px 16px;flex-wrap:wrap}
+  .res .chip{display:flex;align-items:center;gap:7px}
+  .res .dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 6px currentColor,inset 0 0 3px rgba(0,0,0,.5)}
+  .res .amt{font-weight:600;font-size:13px;color:var(--tan)}
+  .res .rwrap{display:flex;flex-direction:column;gap:1px;line-height:1}
+  .res .rlab{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--tan-dim)}
+  .res .rsub{font-size:7.5px;color:#6a5d43}
+  .res .plan{font-size:7.5px;color:#6a5d43;letter-spacing:.06em;font-style:italic;margin-left:2px;align-self:center}
+  .spring{flex:1}
+  .agetrack{display:flex;align-items:stretch}
+  .agebtn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:106px;padding:7px 10px;cursor:pointer;background:transparent;color:var(--tan-dim);
+    border-left:1px solid #0d0a06;transition:all .18s}
+  .agebtn .ag-n{font-family:'Cinzel',serif;font-weight:700;font-size:12px;letter-spacing:.04em}
+  .agebtn .ag-c{font-size:8px;letter-spacing:.13em;text-transform:uppercase;margin-top:2px;opacity:.85}
+  .agebtn:hover{background:#00000030;color:var(--tan)}
+  .agebtn.on{color:#120e08}
+  .agebtn.on.age-0{background:linear-gradient(var(--a1),#6f6349)}
+  .agebtn.on.age-1{background:linear-gradient(var(--a2),#9c6a26)}
+  .agebtn.on.age-2{background:linear-gradient(var(--a3),#8a4230)}
+  .agebtn.on.age-3{background:linear-gradient(var(--a4),#9c7d29)}
+
+  /* ── CIV RAIL ── */
+  .civrail{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 14px;
+    background:linear-gradient(#1a140c,#140f08);border-bottom:1px solid var(--edge);overflow-x:auto}
+  .civ-lead{font-family:'Cinzel',serif;font-weight:700;font-size:12px;color:var(--gold);letter-spacing:.05em;white-space:nowrap;margin-right:2px}
+  .shield{position:relative;flex:0 0 auto;width:120px;display:flex;align-items:center;gap:9px;
+    padding:6px 10px 6px 8px;cursor:pointer;background:linear-gradient(#241b10,#191207);
+    border:1px solid var(--edge);border-radius:4px 4px 8px 8px;transition:all .18s;filter:grayscale(.5) brightness(.82)}
+  .shield:hover{filter:none;border-color:var(--bevel);transform:translateY(-1px)}
+  .shield.on{filter:none;border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 4px 14px rgba(232,184,74,.22)}
+  .shield .flag{font-size:22px;line-height:1;filter:drop-shadow(0 1px 1px #000)}
+  .shield .cv{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .shield .cv-n{font-family:'Cinzel',serif;font-weight:600;font-size:11px;color:var(--tan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shield .cv-e{font-size:7px;letter-spacing:.04em;text-transform:uppercase;color:var(--tan-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shield .civdot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;border:1.5px solid #140f08}
+
+  /* ── STAGE ── */
+  .stage{flex:1 1 auto;position:relative;overflow:auto;min-height:0}
+  .plane{position:relative;transform-origin:0 0}
+  svg.wires{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+  svg.wires line{stroke:var(--edge-lit);stroke-width:2}
+  svg.wires line.locked{stroke:#2b2318;stroke-dasharray:3 5;stroke-width:1.5}
+  svg.wires line.head{stroke:var(--edge);stroke-width:1.5;stroke-dasharray:1 4}
+
+  .band{position:absolute;left:0;pointer-events:none}
+  .band .band-fill{position:absolute;inset:0}
+  .band.b0 .band-fill{background:linear-gradient(90deg,#8f826112,transparent 62%)}
+  .band.b1 .band-fill{background:linear-gradient(90deg,#c88a3414,transparent 62%)}
+  .band.b2 .band-fill{background:linear-gradient(90deg,#b0563a16,transparent 62%)}
+  .band.b3 .band-fill{background:linear-gradient(90deg,#caa23a12,transparent 62%)}
+  .band .band-rule{position:absolute;left:0;right:0;top:0;border-top:1px dashed #3a2d1a66}
+  .band .band-lab{position:absolute;left:12px;top:10px;display:flex;flex-direction:column;gap:2px}
+  .band .bl-age{font-family:'Cinzel',serif;font-weight:700;font-size:13px;letter-spacing:.05em}
+  .band.b0 .bl-age{color:var(--a1)} .band.b1 .bl-age{color:var(--a2)}
+  .band.b2 .bl-age{color:var(--a3)} .band.b3 .bl-age{color:var(--a4)}
+  .band .bl-cefr{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#6a5d43}
+
+  .bhead{position:absolute;top:16px;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;text-align:center}
+  .bhead .ico{font-size:19px;line-height:1;filter:drop-shadow(0 1px 1px #000)}
+  .bhead .bh-n{font-family:'Cinzel',serif;font-weight:700;font-size:11px;color:var(--gold);letter-spacing:.03em}
+  .bhead .bh-b{font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--tan-dim)}
+
+  .unit{position:absolute;cursor:pointer;background:linear-gradient(#2c2114,#1d1509);
+    border:1px solid var(--edge);border-radius:5px;padding:6px 7px 7px;
+    transition:transform .12s,border-color .15s,box-shadow .15s;
+    box-shadow:inset 0 1px 0 #3d2f1a,0 2px 5px #00000055}
+  .unit:hover{transform:translateY(-2px);border-color:var(--bevel);box-shadow:inset 0 1px 0 #3d2f1a,0 5px 14px #00000088}
+  .unit.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 6px 18px rgba(232,184,74,.25)}
+  .unit .u-top{display:flex;align-items:center;gap:6px}
+  .unit .u-ico{font-size:14px;line-height:1;filter:drop-shadow(0 1px 1px #000)}
+  .unit .u-name{font-family:'Cinzel',serif;font-weight:600;font-size:11px;color:var(--tan);line-height:1.12}
+  .unit .u-gloss{font-size:8.5px;color:var(--tan-dim);line-height:1.28;margin-top:4px}
+  .unit .u-tier{position:absolute;top:5px;right:7px;font-size:7px;color:#6a5d43;letter-spacing:.08em}
+  .unit.unique{border-color:var(--gold);background:linear-gradient(#33280f,#241a08);box-shadow:inset 0 1px 0 #5a4620,0 0 14px rgba(232,184,74,.18)}
+  .unit.unique .u-name{color:var(--gold-hi)}
+  .unit.unique .u-tier{display:none}
+  .unit.unique .u-star{position:absolute;top:4px;right:6px;font-size:9px;color:var(--gold)}
+  .unit.locked{background:var(--lock-bg);border-color:var(--lock-bd);opacity:.5;box-shadow:none;border-style:dashed;cursor:default}
+  .unit.locked .u-name,.unit.locked .u-gloss,.unit.locked .u-ico{color:var(--lock-tx);filter:none}
+  .unit.locked:hover{transform:none;border-color:var(--lock-bd)}
+  .unit.locked .u-x{position:absolute;bottom:5px;right:7px;font-size:9px;color:#5c5343}
+
+  /* held center — Path II: present, quiet, never on the altar */
+  .center-mark{position:absolute;pointer-events:none;text-align:center;
+    transform:translate(-50%,-50%);opacity:.14}
+  .center-mark .cm-g{font-family:'Cinzel',serif;font-weight:400;font-size:26px;color:var(--gold);letter-spacing:.04em}
+  .center-mark .cm-l{font-size:7px;letter-spacing:.22em;text-transform:uppercase;color:var(--tan-dim);margin-top:2px}
+
+  /* ── DRAWER ── */
+  .drawer{flex:0 0 auto;min-height:108px;background:linear-gradient(#1c150c,#140f08);
+    border-top:2px solid var(--edge);box-shadow:0 -2px 0 #0a0704,inset 0 1px 0 #3d2f1a;
+    padding:11px 18px;display:flex;gap:20px;align-items:stretch}
+  .d-portrait{flex:0 0 auto;width:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#0f0b06;border:1px solid var(--edge);border-radius:6px}
+  .d-portrait .p-ico{font-size:30px;line-height:1}
+  .d-portrait .p-age{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--tan-dim);text-align:center;padding:0 4px}
+  .d-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .d-title{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+  .d-title .dt-n{font-family:'Cinzel',serif;font-weight:700;font-size:17px;color:var(--gold-hi)}
+  .d-title .dt-real{font-size:11px;color:var(--tan)}
+  .d-title .dt-tag{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#120e08;background:var(--gold);padding:2px 7px;border-radius:3px;font-weight:600}
+  .d-desc{font-size:11px;line-height:1.5;color:#b6a888;max-width:82ch}
+  .d-counters{display:flex;gap:22px;flex-wrap:wrap;margin-top:1px}
+  .d-cbox{display:flex;flex-direction:column;gap:2px}
+  .d-cbox .cb-l{font-size:7.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--tan-dim)}
+  .d-cbox .cb-v{font-size:10.5px}
+  .cb-good{color:var(--good)} .cb-bad{color:var(--bad)}
+  .d-civbox{flex:0 0 auto;width:220px;display:flex;flex-direction:column;gap:5px;border-left:1px solid var(--edge);padding-left:18px}
+  .d-civbox .cvx-h{font-family:'Cinzel',serif;font-weight:600;font-size:12px;color:var(--gold);display:flex;align-items:center;gap:6px}
+  .d-civbox .cvx-row{font-size:9.5px;line-height:1.38;color:#b6a888}
+  .d-civbox .cvx-row b{color:var(--tan);font-weight:600}
+  .d-civbox .cvx-k{color:var(--tan-dim);text-transform:uppercase;letter-spacing:.07em;font-size:7.5px}
+
+  .meta{position:fixed;bottom:5px;right:12px;font-size:8px;letter-spacing:.06em;color:#4c4132;pointer-events:none;text-align:right;line-height:1.55}
+  .meta b{color:#6a5d43}
+  .scrollhint{position:absolute;top:44px;right:14px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#4c4132;pointer-events:none}
+
+  .stage::-webkit-scrollbar,.civrail::-webkit-scrollbar{height:9px;width:9px}
+  .stage::-webkit-scrollbar-thumb,.civrail::-webkit-scrollbar-thumb{background:#3a2d1a;border-radius:5px}
+  .stage::-webkit-scrollbar-track,.civrail::-webkit-scrollbar-track{background:#0e0a06}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="res" id="res"></div>
+    <div class="spring"></div>
+    <div class="agetrack" id="agetrack"></div>
+  </div>
+
+  <div class="civrail">
+    <span class="civ-lead">CHOOSE CIVILIZATION</span>
+    <div id="civs" style="display:flex;gap:8px"></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="scrollhint">◂ scroll the tech tree ▸</div>
+    <div class="plane" id="plane">
+      <svg class="wires" id="wires"></svg>
+    </div>
+  </div>
+
+  <div class="drawer">
+    <div class="d-portrait" id="dPort"><div class="p-ico">🏛️</div><div class="p-age">select a unit</div></div>
+    <div class="d-main">
+      <div class="d-title" id="dTitle"></div>
+      <div class="d-desc" id="dDesc"></div>
+      <div class="d-counters" id="dCounters"></div>
+    </div>
+    <div class="d-civbox" id="dCiv"></div>
+  </div>
+</div>
+<div class="meta"><b>AGE OF LENGUAGES</b> · v1.1 — tech tree<br>ported from MachineNet Graph Sandbox · nodes + edges = the dependency graph<br>the price is always paid — you field only what you pay for</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  AGE OF LENGUAGES · v1.1   (frozen step — Path X: vN+1 copies, never edits)
+//  AoE2 tech-tree, reskinned: civ = language · unit = a core structure.
+//  Honest frame (Path III): ages + resources are the FRAME; live gating &
+//  economy arrive v1.2–v1.3. Nothing here fakes a prize it did not earn.
+//  Motion is opt-in (Path VIII): hover only, nothing auto-plays.
+//  The center is held, not shown (Path II): ἀγάπη — asserted, never on the altar.
+// ════════════════════════════════════════════════════════════════════════
+
+const AGES = [
+  { n:'Dark Age',     cefr:'A1 · survival' },
+  { n:'Feudal Age',   cefr:'A2–B1 · conversational' },
+  { n:'Castle Age',   cefr:'B2 · fluent' },
+  { n:'Imperial Age', cefr:'C1–C2 · native-like' },
+];
+const AGE_TAG = ['A1','B1','B2','C1'];
+
+// resources = the economy of learning. The scarce one is Immersion (gold).
+const RES = [
+  { k:'food',  col:'var(--food)',      amt:200, lab:'Time',      sub:'energy · study hours' },
+  { k:'wood',  col:'var(--wood)',      amt:180, lab:'Reps',      sub:'flashcards · drills' },
+  { k:'gold',  col:'var(--goldres)',   amt:60,  lab:'Immersion', sub:'native contact — scarce' },
+  { k:'stone', col:'var(--stone-res)', amt:100, lab:'Grammar',   sub:'drilling · foundations' },
+];
+
+// ── BUILDINGS = six faculties. Each line's units ascend through the ages. ──
+// unit: {age, name, real, gloss, beats, beatenBy, tech?}  (tech = a civ MAY lack it → grey)
+const BUILDINGS = [
+  { id:'phon', ico:'🗡️', name:'Barracks', faculty:'Phonology',
+    blurb:'The cheap frontline you mass from minute one — the raw sounds. Spam early, upgrade forever.',
+    lines:[
+      { units:[
+        {age:0,name:'Phoneme',      real:'sound inventory',    gloss:'a single contrastive sound',       beats:'silence',            beatenBy:'L1 accent'},
+        {age:1,name:'Syllable',     real:'phonotactics',       gloss:'legal sound combinations',         beats:'mispronunciation',   beatenBy:'consonant clusters'},
+        {age:2,name:'Minimal Pair', real:'phonemic contrast',  gloss:'ship vs sheep · дед vs дід',        beats:'ambiguity',          beatenBy:'merged vowels'},
+        {age:3,name:'Prosody',      real:'stress & intonation',gloss:'the melody that carries meaning',  beats:'flat robotic speech',beatenBy:'tone-deafness'},
+      ]},
+      { units:[
+        {age:1,name:'Contrast Drill', real:'perception training',gloss:'hearing a distinction you can\'t yet make', beats:'false-friend cavalry', beatenBy:'boredom', tech:'contrast'},
+        {age:2,name:'Discrimination', real:'perceptual tuning',  gloss:'auto-sorting hard phonemes',               beats:'L1 transfer',          beatenBy:'fossilization', tech:'contrast'},
+      ]},
+    ]},
+  { id:'lex', ico:'🏹', name:'Archery Range', faculty:'Lexicon',
+    blurb:'The cognate archers — ranged units that reach across the language gap. This is where the etymology graph lives (v1.2 lights the cognate edges).',
+    lines:[
+      { units:[
+        {age:1,name:'Cognate',      real:'shared-root word', gloss:'noche · notte · Nacht — free hits', beats:'blank vocabulary',   beatenBy:'false friends'},
+        {age:2,name:'Word Family',  real:'derivational set', gloss:'nation · national · nationalise',   beats:'one-off memorising', beatenBy:'irregular derivation'},
+        {age:3,name:'Root Cluster', real:'PIE / Greek etymon',gloss:'the trunk every branch grew from', beats:'whole semantic fields',beatenBy:'semantic drift'},
+      ]},
+      { units:[
+        {age:1,name:'F-Friend Guard',real:'faux-ami awareness',gloss:'embarazada ≠ embarrassed',        beats:'cognate over-trust', beatenBy:'rare traps', tech:'fauxami'},
+        {age:2,name:'Register Skirm',real:'connotation guard', gloss:'right word, wrong tone',           beats:'literal translation',beatenBy:'nuance', tech:'fauxami'},
+      ]},
+      { units:[
+        {age:3,name:'Loanword',     real:'borrowed lexicon',  gloss:'weekend · компьютер — modern imports', beats:'tech vocabulary', beatenBy:'purism', tech:'loan'},
+      ]},
+    ]},
+  { id:'syn', ico:'🐎', name:'Stable', faculty:'Syntax',
+    blurb:'The heavy cavalry that wins games. Grammar is what carries you once vocab is massed — expensive, powerful, decisive.',
+    lines:[
+      { units:[
+        {age:1,name:'Word Order',   real:'basic clause',   gloss:'S–V–O and its cousins',        beats:'word salad',    beatenBy:'free-order tongues'},
+        {age:2,name:'Clause Chain', real:'coordination',   gloss:'stringing clauses that hold',   beats:'choppy speech', beatenBy:'subordination'},
+        {age:3,name:'Fluent Syntax',real:'native parsing', gloss:'sentences assemble themselves', beats:'hesitation',    beatenBy:'garden paths'},
+      ]},
+      { units:[
+        {age:2,name:'Agreement',   real:'gender/number concord',gloss:'la casa blanca — all must match', beats:'careless errors', beatenBy:'gender chaos', tech:'agree'},
+        {age:3,name:'Case System', real:'declension of role',   gloss:'who-did-what marked on the noun', beats:'ambiguity',       beatenBy:'6 cases × 3 genders', tech:'case'},
+      ]},
+      { units:[
+        {age:2,name:'Anti-Transfer',real:'interference block',  gloss:'resisting your L1\'s grammar pull',beats:'case-system cavalry',beatenBy:'entrenchment', tech:'antitransfer'},
+      ]},
+    ]},
+  { id:'morph', ico:'🪓', name:'Siege Workshop', faculty:'Morphology',
+    blurb:'Siege engines break walls; morphology breaks long words into roots and affixes — and builds them back. Slow, mechanical, devastating.',
+    lines:[
+      { units:[
+        {age:2,name:'Conjugation Ram',real:'verb paradigm',        gloss:'hablo·hablas·habla — grind the endings',beats:'verb walls', beatenBy:'irregular verbs', tech:'conj'},
+        {age:3,name:'Aspect Engine',  real:'perfective/imperfective',gloss:'was-doing vs did — Slavic siege',      beats:'flat tenses',beatenBy:'aspect pairs', tech:'aspect'},
+      ]},
+      { units:[
+        {age:2,name:'Declension',   real:'case endings',  gloss:'one ending hits a whole word-class', beats:'fixed forms', beatenBy:'exceptions', tech:'decl'},
+      ]},
+      { units:[
+        {age:1,name:'Affix Bolt',    real:'prefix / suffix',  gloss:'un- · -ción · -ность',        beats:'unknown words',    beatenBy:'opaque roots'},
+        {age:3,name:'Agglutination', real:'stacked morphemes',gloss:'building a word like a train', beats:'analytic guessing',beatenBy:'sheer length', tech:'agglut'},
+      ]},
+    ]},
+  { id:'prag', ico:'⛪', name:'Monastery', faculty:'Pragmatics · Idiom',
+    blurb:'Monks convert enemy units to your side. Idiom and cultural frame convert YOU — into thinking like a native. Relics are the untranslatable core concepts.',
+    lines:[
+      { units:[
+        {age:2,name:'Idiom Monk',  real:'fixed expression', gloss:'kick the bucket · dar en el clavo', beats:'literal minds', beatenBy:'opacity'},
+        {age:3,name:'Frame Switch',real:'cultural framing', gloss:'switching the self you think in',    beats:'translation lag',beatenBy:'deep entrenchment', tech:'frame'},
+      ]},
+      { units:[
+        {age:2,name:'Relic · saudade',real:'untranslatable',gloss:'held in the monastery — yields insight over time', beats:'—', beatenBy:'—', relic:true},
+      ]},
+    ]},
+  { id:'listen', ico:'⛵', name:'Dock', faculty:'Listening · Immersion',
+    blurb:'The navy is the immersion stream — the sea of native speech. Fish it, sail it, let it carry you. (v1.4 folds in the immersion Kernel: the marble, the well, the click.)',
+    lines:[
+      { units:[
+        {age:0,name:'Passive Ear',  real:'ambient input',   gloss:'the sound-bath before you understand',beats:'silence',         beatenBy:'tuning out'},
+        {age:1,name:'Shadowing',    real:'echo the speaker',gloss:'saying it a half-second behind',       beats:'passive-only study',beatenBy:'speed'},
+        {age:2,name:'Transcription',real:'catch every word',gloss:'writing down the stream',              beats:'gist-only listening',beatenBy:'fast speech'},
+        {age:3,name:'Native Ear',   real:'effortless input',gloss:'you stop hearing "a foreign language"',beats:'subtitles',       beatenBy:'thick dialects'},
+      ]},
+    ]},
+];
+
+// ── CIVILIZATIONS = languages ──
+const CIVS = [
+  { k:'es', flag:'🇦🇷', name:'Español', epithet:'the cavalry civ', color:'#74acd6',
+    bonus:'Phonetic spelling: Phonology units train 50% faster — you say what you read.',
+    team:'Romance allies share the cognate archer-line (a huge A∩B).',
+    missing:['case','aspect','agglut'],
+    unique:{building:'syn', age:2, name:'El Voseo', real:'voseo · vos tenés', gloss:'the Rioplatense conjugation cavalry'},
+    uTech:'Subjuntivo — mood laid over every clause (Imperial).' },
+  { k:'en', flag:'🇬🇧', name:'English', epithet:'archer civ · lingua franca', color:'#c0492f',
+    bonus:'Loanword empire: Lexicon units cost nothing to unlock — you half-know everyone\'s words.',
+    team:'Allies field the Loanword line for free.',
+    missing:['case','agree','decl','aspect','agglut'],
+    unique:{building:'syn', age:3, name:'Phrasal Verb', real:'get up / over / by', gloss:'the notorious unit — infinite, idiomatic, un-guessable'},
+    uTech:'Great Vowel Shift — spelling and sound divorced forever.' },
+  { k:'pt', flag:'🇵🇹', name:'Português', epithet:'the Spanish sister civ', color:'#5aa06a',
+    bonus:'Near-free transfer from Español (A∩B is enormous) — but nasal phonology is a hard wall.',
+    team:'Iberian union: shares almost the whole tree with Español.',
+    missing:['case','aspect','agglut'],
+    unique:{building:'phon', age:3, name:'Nasal Vowel', real:'ã · õ · ões', gloss:'the phonology unit no sister civ can copy'},
+    uTech:'Mesóclise — a pronoun lodged inside the verb (dar-lhe-ei).' },
+  { k:'ru', flag:'🇷🇺', name:'Русский', epithet:'the siege · morphology civ', color:'#8f7fd0',
+    bonus:'Six-case system: Siege (Morphology) units are devastating; aspect pairs on every verb.',
+    team:'Shares Cyrillic + Slavic roots with Українська.',
+    missing:['loan','fauxami'],
+    unique:{building:'syn', age:3, name:'Verb of Motion', real:'идти vs ходить', gloss:'go-once-on-foot vs go-habitually — the brutal unit'},
+    uTech:'Вид (Aspect) — perfective / imperfective as a way of seeing.' },
+  { k:'uk', flag:'🇺🇦', name:'Українська', epithet:'the Russian sister civ', color:'#d8c24a',
+    bonus:'Near-free transfer from Русский (Slavic A∩B) — but the vocative case and softer phonology diverge.',
+    team:'Slavic union: shares Cyrillic and most roots with Русский.',
+    missing:['loan','fauxami'],
+    unique:{building:'syn', age:2, name:'The Vocative', real:'кличний · Оле! Пане!', gloss:'the case for calling out — a 7th cavalry the sister civ dropped'},
+    uTech:'Ikavism — where о became і (кіт, not кот).' },
+  { k:'el', flag:'🇬🇷', name:'Ελληνικά', epithet:'★ the keystone civ', color:'#4a90d9', keystone:true,
+    bonus:'Root of BOTH alphabets and all technical vocabulary. Every -ology, -graph, -phone, -meter is a free Greek unit — and it seeds the tech-vocab tree for the whole team.',
+    team:'Keystone: every other civ draws its technical lexicon from Greek.',
+    missing:['loan'],
+    unique:{building:'lex', age:3, name:'The Alphabet', real:'α → A and А', gloss:'the literal trunk: the Wonder that seeds Latin AND Cyrillic'},
+    uTech:'Aorist + Polytonic Accent — the deepest tense and the oldest breath-marks.' },
+];
+
+// ════════════════════════════════════════════════════════════════════════
+//  LAYOUT — lane-based (each unit-line is a straight vertical lane).
+// ════════════════════════════════════════════════════════════════════════
+const LEFT=150, AGE_TOP=70, AGE_H=128, NODEW=118, GAP_X=12, COLGAP=26, Y_OFF=30, RIGHTPAD=40;
+const LANEW = NODEW + GAP_X;
+
+let activeCiv = CIVS[0];
+let selUnit = null;
+let allNodes = [];      // {uid,x,y,u,bId,prevUid,headerX,headerY,locked}
+let colX = [];          // building start x
+let colW = [];          // building block width
+let totalW = 0, totalH = 0;
+
+function civHas(t){ return !t || !(activeCiv.missing && activeCiv.missing.indexOf(t)>=0); }
+
+function lanesOf(b){
+  const extra = (activeCiv.unique && activeCiv.unique.building===b.id) ? 1 : 0;
+  return b.lines.length + extra;
+}
+
+function computeLayout(){
+  allNodes = []; colX = []; colW = [];
+  let x = LEFT;
+  BUILDINGS.forEach((b,bi)=>{
+    const lanes = lanesOf(b);
+    const w = lanes*LANEW - GAP_X;
+    colX[bi]=x; colW[bi]=w;
+    const headerX = x + w/2;
+    // regular lanes
+    b.lines.forEach((line,li)=>{
+      const laneX = x + li*LANEW;
+      let prev=null;
+      line.units.forEach((u,ui)=>{
+        const uid=b.id+'_'+li+'_'+ui;
+        const y=AGE_TOP + u.age*AGE_H + Y_OFF;
+        const locked = !u.relic && u.tech && !civHas(u.tech);
+        allNodes.push({uid,x:laneX,y,u,bId:b.id,bi,prevUid:prev,headerX,headerY:34,locked,firstInLane:ui===0});
+        prev=uid;
+      });
+    });
+    // the civ's unique unit (last lane)
+    if(activeCiv.unique && activeCiv.unique.building===b.id){
+      const uq=activeCiv.unique;
+      const laneX = x + b.lines.length*LANEW;
+      const y=AGE_TOP + uq.age*AGE_H + Y_OFF;
+      allNodes.push({uid:'uniq_'+b.id, x:laneX, y, bId:b.id, bi, prevUid:null, headerX, headerY:34,
+        locked:false, firstInLane:true,
+        u:{...uq, beats:'(civ-defining)', beatenBy:'no other civ has it', uniq:true}});
+    }
+    x += w + COLGAP;
+  });
+  totalW = x - COLGAP + RIGHTPAD;
+  totalH = AGE_TOP + AGES.length*AGE_H + 30;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════════════════
+function renderTopBar(){
+  document.getElementById('res').innerHTML =
+    RES.map(x=>`<div class="chip"><span class="dot" style="background:${x.col};color:${x.col}"></span>
+      <span class="amt">${x.amt}</span>
+      <span class="rwrap"><span class="rlab">${x.lab}</span><span class="rsub">${x.sub}</span></span></div>`).join('')
+    + `<span class="plan">economy goes live v1.3</span>`;
+  const at=document.getElementById('agetrack');
+  at.innerHTML = AGES.map((a,i)=>`<div class="agebtn age-${i} ${i===0?'on':''}" data-age="${i}">
+      <span class="ag-n">${a.n}</span><span class="ag-c">${a.cefr}</span></div>`).join('');
+  at.querySelectorAll('.agebtn').forEach(el=>el.onclick=()=>{
+    at.querySelectorAll('.agebtn').forEach(e=>e.classList.remove('on')); el.classList.add('on'); });
+}
+
+function renderCivs(){
+  const host=document.getElementById('civs');
+  host.innerHTML = CIVS.map(c=>`<div class="shield ${c.k===activeCiv.k?'on':''}" data-civ="${c.k}" title="${c.name} — ${c.epithet}">
+      <span class="civdot" style="background:${c.color}"></span>
+      <span class="flag">${c.flag}</span>
+      <span class="cv"><span class="cv-n">${c.name}</span><span class="cv-e">${c.epithet}</span></span></div>`).join('');
+  host.querySelectorAll('.shield').forEach(el=>el.onclick=()=>{
+    activeCiv=CIVS.find(x=>x.k===el.dataset.civ); selUnit=null; renderAll(); });
+}
+
+function renderStatic(){
+  const plane=document.getElementById('plane');
+  plane.querySelectorAll('.band,.bhead,.center-mark').forEach(e=>e.remove());
+  // bands
+  AGES.forEach((a,i)=>{
+    const band=document.createElement('div');
+    band.className='band b'+i;
+    band.style.top=(AGE_TOP+i*AGE_H)+'px'; band.style.width=totalW+'px'; band.style.height=AGE_H+'px';
+    band.innerHTML=`<div class="band-rule"></div><div class="band-fill"></div>
+      <div class="band-lab"><span class="bl-age">${['Dark','Feudal','Castle','Imperial'][i]}</span>
+      <span class="bl-cefr">${a.cefr}</span></div>`;
+    plane.appendChild(band);
+  });
+  // building headers
+  BUILDINGS.forEach((b,bi)=>{
+    const h=document.createElement('div');
+    h.className='bhead';
+    h.style.left=colX[bi]+'px'; h.style.width=colW[bi]+'px';
+    h.innerHTML=`<span class="ico">${b.ico}</span><span class="bh-n">${b.faculty}</span><span class="bh-b">${b.name}</span>`;
+    plane.appendChild(h);
+  });
+  // held center — Path II. Present + quiet. Placed at the true center of the lattice.
+  const cm=document.createElement('div');
+  cm.className='center-mark';
+  cm.style.left=(LEFT + (totalW-LEFT-RIGHTPAD)/2)+'px';
+  cm.style.top=(AGE_TOP + 2.5*AGE_H)+'px';
+  cm.innerHTML=`<div class="cm-g">ἀγάπη</div><div class="cm-l">the center · held, not built</div>`;
+  plane.appendChild(cm);
+  plane.style.width=totalW+'px'; plane.style.height=totalH+'px';
+}
+
+function renderNodes(){
+  const plane=document.getElementById('plane');
+  plane.querySelectorAll('.unit').forEach(e=>e.remove());
+  allNodes.forEach(n=>{
+    const u=n.u, b=BUILDINGS.find(x=>x.id===n.bId);
+    const div=document.createElement('div');
+    div.className='unit'+(u.uniq?' unique':'')+(u.relic?' unique':'')+(n.locked?' locked':'')+(selUnit&&selUnit.uid===n.uid?' sel':'');
+    div.style.left=n.x+'px'; div.style.top=n.y+'px'; div.style.width=NODEW+'px';
+    div.innerHTML=`<div class="u-top"><span class="u-ico">${b.ico}</span><span class="u-name">${u.name}</span></div>
+      <div class="u-gloss">${u.gloss}</div>
+      ${u.uniq?'<span class="u-star">★</span>':(u.relic?'':`<span class="u-tier">${AGE_TAG[u.age]}</span>`)}
+      ${n.locked?'<span class="u-x">✕</span>':''}`;
+    if(!n.locked) div.onclick=()=>selectUnit(n);
+    plane.appendChild(div);
+  });
+  renderWires();
+}
+
+function renderWires(){
+  const svg=document.getElementById('wires');
+  svg.innerHTML=''; svg.setAttribute('width',totalW); svg.setAttribute('height',totalH);
+  const byId={}; allNodes.forEach(n=>byId[n.uid]=n);
+  allNodes.forEach(n=>{
+    // header → first unit in lane
+    if(n.firstInLane){
+      const l=mk(n.x+NODEW/2, n.headerY+8, n.x+NODEW/2, n.y+2, 'head'); svg.appendChild(l);
+    }
+    // unit → predecessor in lane
+    if(n.prevUid && byId[n.prevUid]){
+      const p=byId[n.prevUid];
+      const l=mk(p.x+NODEW/2, p.y+40, n.x+NODEW/2, n.y+2, (n.locked||p.locked)?'locked':'up');
+      svg.appendChild(l);
+    }
+  });
+  function mk(x1,y1,x2,y2,cls){ const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('class',cls);return l; }
+}
+
+// ── drawer ──
+function selectUnit(n){
+  selUnit=n; renderNodes();
+  const u=n.u, b=BUILDINGS.find(x=>x.id===n.bId);
+  document.getElementById('dPort').innerHTML=`<div class="p-ico">${b.ico}</div><div class="p-age">${AGES[u.age].n}</div>`;
+  document.getElementById('dTitle').innerHTML=
+    `<span class="dt-n">${u.name}</span><span class="dt-real">${u.real||''}</span>`+
+    (u.uniq?'<span class="dt-tag">★ unique unit</span>':'')+
+    (u.relic?'<span class="dt-tag">relic</span>':'');
+  document.getElementById('dDesc').innerHTML=`<b style="color:var(--tan)">${u.gloss}.</b> `+
+    (u.uniq
+      ? `Only <b style="color:var(--gold-hi)">${activeCiv.name}</b> fields this — the signature superpower that defines the civ, gated behind the Castle (B2 fluency).`
+      : (u.relic
+        ? `An untranslatable held in the <b style="color:var(--tan)">${b.name}</b>. Like an Age of Empires relic, it is not spent — it sits and yields insight. The deepest of these point at the one center no civ can field: ἀγάπη.`
+        : `A ${b.faculty.toLowerCase()} unit — part of the <b style="color:var(--tan)">${b.name}</b>. ${b.blurb}`));
+  const cc=document.getElementById('dCounters');
+  cc.innerHTML = u.relic
+    ? `<div class="d-cbox"><span class="cb-l">effect</span><span class="cb-v">held — yields <span style="color:var(--goldres)">Immersion</span> over time</span></div>`
+    : `<div class="d-cbox"><span class="cb-l">strong against</span><span class="cb-v cb-good">▲ ${u.beats||'—'}</span></div>
+       <div class="d-cbox"><span class="cb-l">weak against</span><span class="cb-v cb-bad">▼ ${u.beatenBy||'—'}</span></div>
+       <div class="d-cbox"><span class="cb-l">fluency tier</span><span class="cb-v">${AGES[u.age].cefr}</span></div>`;
+  renderCivBox();
+}
+
+function renderCivBox(){
+  const c=activeCiv;
+  const miss=(c.missing||[]).map(techLabel).filter(Boolean);
+  document.getElementById('dCiv').innerHTML=`
+    <div class="cvx-h">${c.flag} ${c.name}</div>
+    <div class="cvx-row"><span class="cvx-k">civ bonus</span><br>${c.bonus}</div>
+    <div class="cvx-row"><span class="cvx-k">team bonus</span><br>${c.team}</div>
+    ${miss.length?`<div class="cvx-row"><span class="cvx-k">missing tech</span><br><span style="color:var(--bad)">✕ ${miss.join(' · ')}</span></div>`:''}
+    <div class="cvx-row"><span class="cvx-k">unique tech</span><br><span style="color:var(--gold)">${c.uTech}</span></div>`;
+}
+
+function techLabel(id){
+  return ({case:'case system',aspect:'verb aspect',agglut:'agglutination',agree:'gender agreement',
+    decl:'declension',loan:'loanwords',fauxami:'false-friend guard',conj:'conjugation',
+    contrast:'contrast drills',antitransfer:'anti-transfer',frame:'frame-switch'})[id]||id;
+}
+
+function renderIntro(){
+  document.getElementById('dPort').innerHTML=`<div class="p-ico">${activeCiv.flag}</div><div class="p-age">${activeCiv.name}</div>`;
+  document.getElementById('dTitle').innerHTML=`<span class="dt-n">${activeCiv.name}</span><span class="dt-real">${activeCiv.epithet}</span>`;
+  document.getElementById('dDesc').innerHTML=`<b style="color:var(--tan)">${activeCiv.bonus}</b> Grey dashed units are techs this language lacks — its missing branches. Gold ★ is the unique unit. Click any unit to read its counters. <span style="color:#6a5d43">(Ages & resources are the frame; live gating arrives v1.2–v1.3 — the price is always paid.)</span>`;
+  document.getElementById('dCounters').innerHTML='';
+}
+
+function renderAll(){
+  renderCivs(); computeLayout(); renderStatic(); renderNodes(); renderCivBox();
+  if(!selUnit) renderIntro();
+}
+
+renderTopBar();
+renderAll();
+</script>
+</body>
+</html>
